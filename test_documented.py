@@ -14,7 +14,7 @@ from sf_combo_finder.tui_search import sort_combo_rows
 class DocumentedRouteTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.data = json.loads(DATA_PATH.read_text())
+        cls.data = json.loads(DATA_PATH.read_text(encoding='utf-8'))
 
     def test_every_character_has_source_labelled_default_results(self):
         for character in self.data['characters']:

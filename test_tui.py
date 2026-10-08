@@ -323,9 +323,10 @@ class BrowserInteractionTests(unittest.IsolatedAsyncioTestCase):
             await self.search(app, pilot)
             baseline_count, generation = app.match_count, app.generation
             await pilot.press('ctrl+b')
-            app.query_one('#no-jumping', Checkbox).scroll_visible()
+            app.query_one('#no-jumping', Checkbox).scroll_visible(animate=False)
             await pilot.pause()
-            await pilot.click('#no-jumping')
+            # Finish scrolling before clicking inside the checkbox.
+            self.assertTrue(await pilot.click('#no-jumping', offset=(2, 0)))
             await self.finish(app, pilot)
             self.assertTrue(app.settings.no_jumping)
             self.assertGreater(app.generation, generation)

@@ -16,7 +16,7 @@ class RosterTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.data = json.loads(DATA_PATH.read_text(encoding='utf-8'))
-        cls.levels = json.loads((SOURCE_DIR / 'sa-levels.json').read_text())
+        cls.levels = json.loads((SOURCE_DIR / 'sa-levels.json').read_text(encoding='utf-8'))
 
     def test_released_roster_has_data_not_placeholders(self):
         self.assertEqual(set(self.data['characters']), set(self.levels))
@@ -27,7 +27,7 @@ class RosterTests(unittest.TestCase):
                 finder = ComboFinder(key, 3, 5, data=self.data)
                 self.assertIsNotNone(next(finder.iter_combos(), None))
                 if key != 'aki':
-                    source = json.loads((SOURCE_DIR / f'{key}.json').read_text())
+                    source = json.loads((SOURCE_DIR / f'{key}.json').read_text(encoding='utf-8'))
                     originals = [m for m in character['moves'].values() if not m.get('documented_import')]
                     self.assertEqual(len(originals), len(source['moves']))
                     self.assertEqual({m['source_index'] for m in originals},
@@ -89,7 +89,7 @@ class RosterTests(unittest.TestCase):
                             for m in self.data['characters']['jamie']['moves'].values()))
 
     def test_yasmine_missing_values_are_not_fabricated(self):
-        source = json.loads((SOURCE_DIR / 'yasmine.json').read_text())
+        source = json.loads((SOURCE_DIR / 'yasmine.json').read_text(encoding='utf-8'))
         character = self.data['characters']['yasmine']
         for move in character['moves'].values():
             if source['moves'][move['source_index']]['startup'] is None:
@@ -125,7 +125,7 @@ class RosterTests(unittest.TestCase):
         self.assertEqual(self.data, before)
 
     def test_ambiguous_duplicates_cannot_enter_generation(self):
-        source = json.loads((SOURCE_DIR / 'ryu.json').read_text())
+        source = json.loads((SOURCE_DIR / 'ryu.json').read_text(encoding='utf-8'))
         normal = next(m for m in source['moves'] if (m.get('input') or {}).get('numpad') == '5MP')
         source['moves'] = [deepcopy(normal), deepcopy(normal)]
         converted = convert_character(source, self.levels['ryu'])
