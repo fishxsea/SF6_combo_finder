@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sf-combo-finder"
+version = "0.1.0"
+description = "A terminal browser and CLI for Street Fighter 6 combo candidates"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["textual>=1.0,<9.0"]
+
+[project.optional-dependencies]
+build = ["build>=1.2,<2", "pyinstaller>=6,<7"]
+
+[project.scripts]
+sf-combo-finder = "sf_combo_finder.combo_tui:main"
+sf-combo-finder-cli = "sf_combo_finder.combo_finder:main"
+
+[tool.setuptools]
+packages = ["sf_combo_finder"]
+
+[tool.setuptools.package-data]
+sf_combo_finder = ["characters.json", "DATA_NOTICE.md"]

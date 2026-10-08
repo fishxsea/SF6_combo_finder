@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.tui_preferences.json
+.combo_library.json
+.combo_library.json.*
+.idea/
+.DS_Store
+.env
+.env.*
+build/
+dist/
+*.egg-info/

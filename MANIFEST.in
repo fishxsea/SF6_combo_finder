@@ -1,0 +1,13 @@
+include DATA_NOTICE.md
+include DATA_SOURCES.md
+include COMBO_RULES.md
+include DOCUMENTED_COVERAGE.md
+include requirements.txt
+recursive-include data *.json
+recursive-include scripts *.py
+include sf-combo-finder.spec
+include combo_finder.py
+include combo_tui.py
+include import_roster.py
+include import_documented.py
+include test_*.py
