@@ -1,5 +1,5 @@
 # SF6 Combo Finder
-
+<img width="2045" height="1284" alt="Screenshot 2026-10-08 at 2 50 13 PM" src="https://github.com/user-attachments/assets/f045ad4b-f411-47ae-b7ff-429b13379343" />
 A Textual terminal browser and CLI for the combos in `sf_combo_finder/characters.json`.
 Both interfaces use the same search rules, conditions, difficulty estimates and
 raw damage calculations. The dataset contains all 31 fighters released as of
@@ -286,6 +286,4 @@ archives include the data attribution; the Python package also includes
 python -m unittest -v
 ```
 
-The suite includes search integration tests and Textual headless interaction
-tests using its [Pilot API](https://textual.textualize.io/guide/testing/).
-UI tests are skipped when Textual is not installed.
+
