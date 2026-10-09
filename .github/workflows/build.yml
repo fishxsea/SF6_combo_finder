@@ -25,6 +25,7 @@ jobs:
       - name: Install app and build tools
         run: python -m pip install ".[build]"
       - name: Run tests
+        timeout-minutes: 5
         env:
           SF_COMBO_FINDER_HOME: ${{ runner.temp }}/sf-combo-finder-test-data
         run: python -m unittest -v

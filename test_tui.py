@@ -13,8 +13,9 @@ from unittest.mock import patch
 
 from sf_combo_finder.combo_finder import ComboFinder, main as cli_main
 from sf_combo_finder.tui_search import (SearchResult, SearchSettings, search_combos,
+                                      search_route_pool, filter_route_pool,
                                       combo_startup, combo_poison_notes)
-from sf_combo_finder.combo_library import LIBRARY_PATH
+from sf_combo_finder.combo_library import ComboLibrary, LIBRARY_PATH
 from sf_combo_finder.tui_themes import PALETTES, load_theme
 
 HAS_TEXTUAL = importlib.util.find_spec('textual') is not None
@@ -39,10 +40,12 @@ class BrowserSearchTests(unittest.TestCase):
     def test_poison_marker_reports_published_starting_requirement(self):
         finder = ComboFinder('aki')
         notes = combo_poison_notes(finder, {'moves': ['5mp'],
+                                           'evidence': {'kind': 'published_recipe'},
                                            'conditions': {'opponent_poisoned': True}})
         self.assertEqual(notes, ['This published route requires the opponent to start poisoned.'])
         self.assertEqual(combo_poison_notes(ComboFinder('ryu'),
-                                          {'moves': ['5mp'], 'conditions': {'opponent_poisoned': True}}), [])
+                                          {'moves': ['5mp'], 'evidence': {'kind': 'published_recipe'},
+                                           'conditions': {'opponent_poisoned': True}}), [])
 
     def test_all_results_match_existing_engine(self):
         settings = SearchSettings(character='aki', sample_size=None, documented_only=True, max_length=8)
@@ -130,6 +133,23 @@ class BrowserSearchTests(unittest.TestCase):
         self.assertEqual(result.total, 0)
         self.assertEqual(result.rows, [])
 
+    def test_documented_cache_never_enumerates_generated_routes(self):
+        library = ComboLibrary(None)
+        for minimum, maximum in ((3, 8), (20, 20)):
+            settings = SearchSettings(documented_only=True, min_length=minimum,
+                                      max_length=maximum)
+            expected = search_combos(settings, library=library)
+            # Fail immediately if the cache enters the generated-search path.
+            with patch.object(ComboFinder, '_eligible',
+                              side_effect=AssertionError('Generated search in published-only mode')):
+                result = search_route_pool(settings, library=library)
+            self.assertEqual(result.total, expected.total)
+            actual = filter_route_pool(result.route_pool, settings, library)
+            def routes(rows):
+                return {(c['character'], tuple(c['moves']), c['conditions']['position']): c
+                        for _, c in rows}
+            self.assertEqual(routes(actual), routes(expected.rows))
+
     def test_cli_prefills_browser_filters(self):
         fake_app = unittest.mock.MagicMock()
         module = SimpleNamespace(ComboFinderApp=fake_app)
@@ -183,13 +203,15 @@ class BrowserInteractionTests(unittest.IsolatedAsyncioTestCase):
         async with app.run_test(size=(140, 70)) as pilot:
             self.assertFalse(app.query('#browse'))
             details = app.query_one('#details')
-            self.assertEqual(details.region.height, 40)
+            previous_height = details.region.height
+            self.assertGreater(previous_height, 10)
             self.assertGreater(app.query_one('#results').size.height, 0)
             for width, height in ((100, 40), (80, 24)):
                 await pilot.resize_terminal(width, height)
                 await pilot.pause()
                 self.assertGreaterEqual(details.region.height, 4)
-                self.assertLess(details.region.height, 40)
+                self.assertLess(details.region.height, previous_height)
+                previous_height = details.region.height
                 self.assertLessEqual(details.region.bottom, height - 1)
                 self.assertGreater(app.query_one('#results').size.height, 0)
             app.action_details()
@@ -199,7 +221,7 @@ class BrowserInteractionTests(unittest.IsolatedAsyncioTestCase):
     async def test_poison_control_only_applies_when_aki_is_selected(self):
         app = ComboFinderApp(settings=SearchSettings(character='aki', opponent_poisoned=True),
                              preferences_path=None, library_path=None)
-        with patch('sf_combo_finder.combo_tui.search_combos') as search:
+        with patch('sf_combo_finder.combo_tui.search_route_pool') as search:
             async with app.run_test(size=(120, 40)) as pilot:
                 poisoned = app.query_one('#poisoned', Checkbox)
                 character = app.query_one('#character', Select)
@@ -317,7 +339,7 @@ class BrowserInteractionTests(unittest.IsolatedAsyncioTestCase):
 
     async def finish(self, app, pilot):
         await pilot.pause()
-        await app.workers.wait_for_complete()
+        await asyncio.wait_for(app.workers.wait_for_complete(), timeout=30)
         await pilot.pause()
 
     async def search(self, app, pilot, sample_size=5):
@@ -327,7 +349,7 @@ class BrowserInteractionTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_startup_waits_for_search_and_random_count_is_always_blank(self):
         app = ComboFinderApp(settings=SearchSettings(sample_size=5), preferences_path=None)
-        with patch('sf_combo_finder.combo_tui.search_combos') as search:
+        with patch('sf_combo_finder.combo_tui.search_route_pool') as search:
             async with app.run_test(size=(140, 42)) as pilot:
                 await pilot.pause()
                 self.assertEqual(app.query_one('#random-count', Input).value, '')
@@ -469,12 +491,12 @@ class BrowserInteractionTests(unittest.IsolatedAsyncioTestCase):
             self.assertNotIn('stale error', str(app.query_one('#status', Static).render()))
 
     async def test_cancel_background_search(self):
-        def slow_search(settings, data_path, *, cancelled, progress, library):
+        def slow_search(settings, data_path, *, cancelled, progress=None, library):
             while not cancelled():
                 time.sleep(0.005)
             return SearchResult(cancelled=True)
 
-        with patch('sf_combo_finder.combo_tui.search_combos', slow_search):
+        with patch('sf_combo_finder.combo_tui.search_route_pool', slow_search):
             app = ComboFinderApp()
             async with app.run_test(size=(120, 36)) as pilot:
                 await pilot.click('#search')
@@ -484,6 +506,34 @@ class BrowserInteractionTests(unittest.IsolatedAsyncioTestCase):
                 await pilot.pause()
                 self.assertIn('Search cancelled', str(app.query_one('#status', Static).render()))
                 self.assertEqual(app.rows, [])
+
+    async def test_documented_toggle_generates_only_when_requested_then_reuses_cache(self):
+        app = ComboFinderApp(settings=SearchSettings(character='ryu', min_length=2,
+                                                    max_length=3, documented_only=True),
+                             preferences_path=None, library_path=None)
+        with patch('sf_combo_finder.combo_tui.search_route_pool', wraps=search_route_pool) as search:
+            async with app.run_test(size=(140, 42)) as pilot:
+                await self.search(app, pilot, sample_size=None)
+                self.assertEqual(search.call_count, 1)
+                self.assertTrue(app.rows)
+                self.assertTrue(all(c['evidence']['kind'] == 'published_recipe' for _, c in app.rows))
+                published_count = app.match_count
+
+                app.query_one('#documented', Checkbox).value = False
+                await self.finish(app, pilot)
+                self.assertEqual(search.call_count, 2)
+                self.assertGreater(app.match_count, published_count)
+                self.assertTrue(any(c['evidence']['kind'] == 'frame_timing' for _, c in app.rows))
+
+                app.query_one('#documented', Checkbox).value = True
+                await self.finish(app, pilot)
+                self.assertEqual(search.call_count, 2)
+                self.assertEqual(app.match_count, published_count)
+                self.assertTrue(all(c['evidence']['kind'] == 'published_recipe' for _, c in app.rows))
+                await pilot.press('ctrl+n')
+                await self.finish(app, pilot)
+                self.assertEqual(search.call_count, 2)
+                self.assertTrue(all(c['evidence']['kind'] == 'published_recipe' for _, c in app.rows))
 
     async def test_help_and_shuffle_from_all_results(self):
         app = ComboFinderApp(settings=SearchSettings(documented_only=True, sample_size=None))

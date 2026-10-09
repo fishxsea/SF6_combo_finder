@@ -28,9 +28,9 @@ class FrameDetailsTests(unittest.TestCase):
         self.assertIn(window, text)
         self.assertLess(text.index('1. B'), text.index(window))
         self.assertLess(text.index(window), text.index('2. X'))
-        unknown = 'Time to input next move: unknown (exact input window unavailable)'
-        self.assertLess(text.index('2. X'), text.index(unknown))
-        self.assertLess(text.index(unknown), text.index('3. X'))
+        unavailable = 'Time to input next move: unavailable for this transition'
+        self.assertLess(text.index('2. X'), text.index(unavailable))
+        self.assertLess(text.index(unavailable), text.index('3. X'))
         self.assertEqual(text.count('Time to input next move:'), 2)
         final = text.split('3. X')[1]
         self.assertIn('Startup: unknown', final)
@@ -53,17 +53,17 @@ class FrameDetailsTests(unittest.TestCase):
         text = self.details(['2lp', 'heavy_serpent_lash'], ['cancel'])
         self.assertIn('Hitstun at the earliest modeled cancel: 14f (233.3 ms)', text)
         self.assertIn('Hitstun margin: 3f (50.0 ms) (not a button-input window)', text)
-        self.assertIn('exact input window: unknown', text)
-        self.assertIn('Time to input next move: unknown', text)
+        self.assertIn('Cancel during the preceding move.', text)
+        self.assertIn('Time to input next move: unavailable for this transition', text)
         self.assertNotIn('; nominal link window)', text)
 
     def test_poison_crumple_and_movement_do_not_get_grounded_link_windows(self):
         text = self.details(['heavy_serpent_lash', 'drive_rush', '5mp'],
                             ['crumple', 'drive_rush_attack'], opponent_poisoned=True)
         self.assertIn('Hit state: crumple; advantage: +53f (+883.3 ms)', text)
-        self.assertIn('Movement/stance timing: unknown', text)
-        self.assertIn('Follow-up input window: unknown', text)
-        self.assertEqual(text.count('Time to input next move: unknown'), 2)
+        self.assertIn('Movement/stance action; follow the route notes.', text)
+        self.assertIn('Use the published follow-up timing notes.', text)
+        self.assertEqual(text.count('Time to input next move: unavailable for this transition'), 2)
         self.assertNotIn('; nominal link window)', text)
 
     def test_unknown_cancel_budget_and_invalid_published_link_stay_explicit(self):
@@ -76,7 +76,7 @@ class FrameDetailsTests(unittest.TestCase):
         self.assertNotIn('Hitstun margin:', text)
         text = self.details(['5mp', '5mk'], ['documented_link'])
         self.assertIn('Stored frames do not support this link without additional setup.', text)
-        self.assertIn('Time to input next move: unknown', text)
+        self.assertIn('Time to input next move: unavailable for this transition', text)
         self.assertNotIn('; nominal link window)', text)
 
     def test_unknown_target_opener_does_not_fall_back_to_final_startup(self):

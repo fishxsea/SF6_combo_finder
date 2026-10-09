@@ -49,9 +49,9 @@ class CachedRoutePool:
 
 
 def route_pool_settings(settings):
-    """Only scenario/length/meter changes require another enumeration."""
+    """Keep published-only searches bounded; broaden inexpensive route filters."""
     return replace(settings, sample_size=None, max_difficulty=None,
-                   no_specials=False, no_jumping=False, documented_only=False,
+                   no_specials=False, no_jumping=False,
                    optimistic_links=True, explore_light_chains=True,
                    starred_only=False, show_hidden=True, hidden_only=False)
 
@@ -205,7 +205,8 @@ def combo_poison_notes(finder, combo):
     if finder.character != 'aki':
         return []
     notes = []
-    if combo.get('conditions', {}).get('opponent_poisoned'):
+    if (combo.get('evidence', {}).get('kind') == 'published_recipe'
+            and combo.get('conditions', {}).get('opponent_poisoned')):
         notes.append('This published route requires the opponent to start poisoned.')
     fields = {'damage': 'damage', 'hit': 'hit state/advantage', 'cancel': 'cancel options',
               'startup': 'startup', 'active_frames': 'active frames',

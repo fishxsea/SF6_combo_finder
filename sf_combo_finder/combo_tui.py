@@ -69,6 +69,8 @@ class HelpScreen(ModalScreen):
                 'sample from the cached search pool. Route checkboxes filter cached routes, '
                 'including both optimistic-link and light-chain modes. Character, length, '
                 'meter and starting-condition changes load another pool. '
+                'Documented-only searches prepare published routes; turning that option off '
+                'loads generated candidates when needed. '
                 'Sort by character, difficulty, length or '
                 'raw damage or opening attack startup, in ascending or descending order, without searching again. '
                 'Startup uses the first damaging attack; movement, jump travel and charge preparation '
@@ -449,6 +451,7 @@ class ComboFinderApp(App):
             self.query_one(f'#{widget_id}').border_title = title
         self.query_one('#details').display = self.show_details
         self.query_one('#toggle-details', Button).set_class(self.show_details, 'nav-active')
+        self.resize_details(self.size.height)
         self.update_character_controls(self.settings.character)
         self.set_filters_visible(self.size.width >= 110)
         table = self.query_one('#results', DataTable)
@@ -503,6 +506,13 @@ class ComboFinderApp(App):
     def on_resize(self, event: Resize) -> None:
         if self.screen_stack:
             self.screen_stack[0].set_class(event.size.height < 32, 'compact')
+        self.resize_details(event.size.height)
+
+    def resize_details(self, terminal_height: int) -> None:
+        # Cap the proportional panel so navigation and results still fit.
+        reserved = 26 if terminal_height < 32 else 28
+        for details in self.query('#details'):
+            details.styles.max_height = max(4, terminal_height - reserved)
 
     def update_character_controls(self, character: str) -> None:
         selected = self.characters.values() if character == 'all' else [self.characters.get(character, {})]
@@ -604,7 +614,7 @@ class ComboFinderApp(App):
         except ValueError as error:
             self.query_one('#status', Static).update(str(error))
             return
-        if not self.searching and (route_pool_settings(settings) in self.combo_pools or
+        if not self.searching and (self.cached_pool_key(settings) in self.combo_pools or
                 (self.combo_pool is not None and
                  self.poison_pool_key(settings) == self.poison_pool_key(self.settings))):
             if self.size.width < 110:
@@ -633,6 +643,9 @@ class ComboFinderApp(App):
                     self.update_results_status()
                 self.pending_poison_settings = None
                 return
+            if not self.searching and self.cached_pool_key(settings) in self.combo_pools:
+                await self.switch_poison_pool(settings)
+                return
             if self.poison_pool_key(settings) == self.poison_pool_key(self.settings):
                 if settings.sample_size is not None and settings.sample_size < 1:
                     raise ValueError('Random count must be positive, or blank for all results')
@@ -650,6 +663,14 @@ class ComboFinderApp(App):
     @staticmethod
     def poison_pool_key(settings: SearchSettings) -> SearchSettings:
         return replace(route_pool_settings(settings), opponent_poisoned=False)
+
+    def cached_pool_key(self, settings: SearchSettings) -> SearchSettings:
+        key = route_pool_settings(settings)
+        if key.documented_only and key not in self.combo_pools:
+            broader = replace(key, documented_only=False)
+            if broader in self.combo_pools:
+                return broader
+        return key
 
     def clear_pool_cache(self) -> None:
         self.cache_generation += 1
@@ -670,7 +691,7 @@ class ComboFinderApp(App):
         self.poison_cache_worker = self.warm_poison_cache(key, self.cache_generation)
 
     async def switch_poison_pool(self, settings: SearchSettings, *, shuffle=False) -> None:
-        key = route_pool_settings(settings)
+        key = self.cached_pool_key(settings)
         if key not in self.combo_pools:
             self.pending_poison_settings = settings
             state = 'poisoned' if settings.opponent_poisoned else 'unpoisoned'
@@ -1081,7 +1102,7 @@ class ComboFinderApp(App):
         except ValueError as error:
             self.query_one('#status', Static).update(str(error))
             return
-        key = route_pool_settings(settings)
+        key = self.cached_pool_key(settings)
         if key not in self.combo_pools:
             if (self.combo_pool is not None
                     and self.poison_pool_key(settings) == self.poison_pool_key(self.settings)):

@@ -58,6 +58,8 @@ To launch again, repeat only the last command for your platform.
 
 Route-option checkboxes reuse cached results after the first search. Changing the
 fighter, length, meter or starting conditions can require a new search.
+**Documented only** searches prepare published routes without generating combos.
+Turning it off loads generated candidates; turning it back on reuses those results.
 
 Choose **Xbox**, **PlayStation**, or **SF notation** under Display. Button labels
 assume Classic controls. Themes and display choices are saved automatically.

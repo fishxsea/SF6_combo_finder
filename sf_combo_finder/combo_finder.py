@@ -714,6 +714,7 @@ def main():
                             print(f"   {combo['evidence']['source_label']}: {combo['evidence']['title']}")
                         if conditions:
                             print('   Requires: ' + ', '.join(f'{key}={value}' for key, value in conditions.items()))
+                        if combo['evidence'].get('sources'):
                             print('   Source: ' + ', '.join(combo['evidence']['sources']))
                         print('   Score breakdown: ' + ', '.join(
                             f'{factor.replace("_", " ")}={points}'
