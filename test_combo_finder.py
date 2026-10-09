@@ -206,6 +206,63 @@ class ComboFinderTests(unittest.TestCase):
         self.assertEqual(target['link_windows'], [])
         self.assertTrue(any('cancel input windows' in caveat for caveat in target['caveats']))
 
+    def test_short_tight_links_are_hard_and_filter_out_of_easy(self):
+        normal = ComboFinder('aki', 3, 3)
+        combo = next(c for c in normal.iter_combos() if c['moves'] == ['5mk', 'hundun'])
+        rating = combo['difficulty']
+        self.assertEqual(rating['label'], 'hard')
+        self.assertEqual(rating['components']['links'], 8)
+        self.assertEqual(rating['link_windows'][0]['nominal_frames'], 2)
+        self.assertAlmostEqual(rating['link_windows'][0]['nominal_ms'], 1000 / 30)
+        self.assertTrue(any('33.3 ms; +8 timing points' in reason for reason in rating['reasons']))
+        easy = ComboFinder('aki', 3, 3, max_difficulty='easy')
+        self.assertFalse(any(c['moves'] == ['5mk', 'hundun'] for c in easy.iter_combos()))
+        counter = ComboFinder('aki', 3, 3, hit_type='counter')
+        wider = next(c for c in counter.iter_combos() if c['moves'] == ['5mk', 'hundun'])
+        self.assertLess(wider['difficulty']['score'], rating['score'])
+
+    def test_timing_difficulty_applies_across_characters_and_windows(self):
+        for character in ('aki', 'ryu', 'cammy'):
+            base = ComboFinder(character)
+            data = deepcopy(base.data)
+            # Control the measured window while keeping the route length and
+            # inputs constant, so length cannot conceal tight timing.
+            moves = data['characters'][character]['moves']
+            moves['5lp']['startup'] = 5
+            combo = dict(moves=['5mk', '5lp'], length=2, transitions=['link'])
+            scores = []
+            for window, label in ((1, 'hard'), (2, 'hard'), (3, 'medium'),
+                                  (4, 'easy'), (5, 'easy'), (6, 'easy')):
+                with self.subTest(character=character, window=window):
+                    moves['5mk']['hit'] = {'state': 'normal', 'advantage': window + 4}
+                    finder = ComboFinder(character, data=data)
+                    rating = finder.estimate_difficulty(combo)
+                    self.assertEqual(rating['label'], label)
+                    self.assertEqual(rating['score'], sum(rating['components'].values()))
+                    scores.append(rating['score'])
+            self.assertEqual(scores, sorted(scores, reverse=True))
+            self.assertEqual(len(set(scores)), len(scores))
+
+    def test_multiple_tight_links_add_timing_points(self):
+        finder = ComboFinder('aki')
+        rating = finder.estimate_difficulty(dict(moves=['5mk', '5lp', '5lk'],
+                                                  length=3, transitions=['link', 'link']))
+        self.assertEqual([w['nominal_frames'] for w in rating['link_windows']], [2, 1])
+        self.assertEqual(rating['components']['links'], 18)
+        self.assertEqual(rating['label'], 'hard')
+
+    def test_documented_links_score_known_timing_without_inventing_unknown_windows(self):
+        finder = ComboFinder('aki')
+        for transition in ('link', 'documented_link'):
+            rating = finder.estimate_difficulty(dict(moves=['5mk', 'hundun'], length=3,
+                                                      transitions=[transition]))
+            self.assertEqual(rating['label'], 'hard')
+        unknown = finder.estimate_difficulty(dict(moves=['heavy_serpent_lash', '5mp'],
+                                                   length=2, transitions=['documented_link']))
+        self.assertEqual(unknown['components']['links'], 0)
+        self.assertEqual(unknown['link_windows'], [])
+        self.assertTrue(any('timing is unknown' in note for note in unknown['caveats']))
+
     def test_difficulty_filter_is_inclusive_and_does_not_change_validity(self):
         unfiltered = list(ComboFinder('aki', 2, 4).iter_combos())
         limits = {'easy': 3, 'medium': 7, 'hard': float('inf')}

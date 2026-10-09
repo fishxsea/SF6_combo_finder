@@ -158,8 +158,12 @@ This is a transparent heuristic, not a measured success rate. Points are:
 - Motions: one point per consecutive direction sequence with at least two
   digits, or two for a sequence with at least six digits (e.g. `236236`).
 - Simultaneous buttons: one point per `PP`, `KK` or `+` input.
-- Links: three points for a nominal one-frame window, two for two frames,
-  one for three frames, and zero for wider windows. The window is
+- Links: ten points for a nominal one-frame window (16.7 ms), eight for two
+  frames (33.3 ms), four for three (50.0 ms), two for four (66.7 ms), one for
+  five (83.3 ms), and zero for wider windows. A single 1–2 frame link makes
+  even a short route **hard**; a three-frame link makes it at least **medium**.
+  These weights apply to all characters and add up across consecutive links.
+  The window is
   `resolved on-hit advantage - next attack startup + 1`. Counter and poison
   changes are applied before this calculation. Variable advantage adds one
   point because contact timing matters.
@@ -168,7 +172,9 @@ This is a transparent heuristic, not a measured success rate. Points are:
   juggle, crumple or delayed-cancel transition. Published links do not receive
   a numerical link-window score when their exact windows are unavailable.
   Where the conservative timing engine can measure a link, its regular window
-  score is retained. Difficulty filtering happens after recipe deduplication.
+  score is retained, including documented links with sufficient stored frame
+  data. Unknown timing or timing requiring unmodeled setup is not assigned a
+  precision score. Difficulty filtering happens after recipe deduplication.
 
 Scores 0–3 are **easy**, 4–7 **medium**, and 8+ **hard**. These labels are
 relative estimates and may need tuning based on playtesting. Actual input

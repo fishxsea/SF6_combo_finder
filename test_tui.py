@@ -136,6 +136,21 @@ class BrowserSearchTests(unittest.TestCase):
 
 @unittest.skipUnless(HAS_TEXTUAL, 'Install requirements.txt to run Textual interaction tests')
 class BrowserInteractionTests(unittest.IsolatedAsyncioTestCase):
+    async def test_details_show_vertical_frames_and_milliseconds(self):
+        finder = ComboFinder('aki', 3, 3, no_jumping=True)
+        combo = next(c for c in finder.iter_combos() if c['moves'] == ['5mk', 'hundun'])
+        app = ComboFinderApp(settings=SearchSettings(character='aki'),
+                             preferences_path=None, library_path=None, show_details=True)
+        async with app.run_test(size=(120, 40)):
+            app.rows = [(finder, combo)]
+            app.update_details(0)
+            detail = str(app.query_one('#detail-text', Static).render())
+            self.assertIn('FRAME SEQUENCE', detail)
+            self.assertIn('1. B', detail)
+            self.assertIn('2. X', detail)
+            self.assertIn('3. X', detail)
+            self.assertIn('Time to input next move: 33.3 ms (2 frames; nominal link window)', detail)
+
     async def test_controller_switch_updates_rows_details_copy_without_search(self):
         from sf_combo_finder.tui_themes import load_controller
         with tempfile.TemporaryDirectory() as directory:

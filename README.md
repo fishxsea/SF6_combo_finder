@@ -112,6 +112,25 @@ when a mark changes filtered membership, the app searches again to refill the
 pool. Like other route options, these filters refresh after your first Search
 and do not trigger a search at startup.
 
+The Details panel shows each combo input vertically with startup, active frames,
+recovery on hit and on-hit advantage. Durations use 60 FPS (one frame is
+approximately 16.7 ms). Links show the opponent's remaining hitstun after your
+recovery, the next attack's startup, the latest start delay and the nominal link
+window. Between each input, a bold **Time to input next move** line shows the
+window in milliseconds first, or **unknown** when the exact window is unavailable.
+For example, A.K.I.'s standing MK (+6) into standing LP (5-frame startup)
+allows a latest start delay of one frame (16.7 ms), with two possible start frames
+(a nominal 2-frame / 33.3 ms window). This does not measure the game's input
+buffer. Cancels show inferred hitstun and its margin, with exact input windows
+marked unknown. Missing frame data and individual target-combo timings stay
+unknown; hitstop, travel and spacing are not simulated.
+
+Difficulty gives tight link timing substantial weight across all characters:
+1–2 frame links (16.7–33.3 ms) rate **hard**, and 3-frame links (50.0 ms) rate
+at least **medium**, even in short combos. Multiple links add to the score.
+Details explain each known link's timing and points. Exact chain, cancel and
+target-combo input windows are not available and are not assigned precision scores.
+
 The selected-combo panel below the table shows its notation, estimated
 difficulty, input count, raw damage, evidence type and Drive/Super usage bars.
 The session summary shows the active fighter, length range, meter budget and

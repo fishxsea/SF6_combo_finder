@@ -18,6 +18,7 @@ from textual.widgets import Button, Checkbox, DataTable, Footer, Input, Label, S
 from textual.worker import get_current_worker
 
 from .combo_finder import CONTROLLERS, DATA_PATH
+from .combo_frames import frame_details
 from .combo_library import ComboLibrary, LIBRARY_PATH
 from .tui_search import SearchResult, SearchSettings, search_combos, sort_combo_rows, combo_startup
 from .tui_themes import (DEFAULT_THEME, PALETTES, PREFERENCES_PATH, load_theme, save_theme,
@@ -695,7 +696,7 @@ class ComboFinderApp(App):
         meter.append('░' * max(0, self.settings.super_meter - super_spent), style=colors['cf-border'])
         meter.append(f' {super_spent}/{self.settings.super_meter}', style=colors['cf-muted'])
         self.query_one('#selection-meter', Static).update(meter)
-        text.append_text(notation)
+        text.append_text(frame_details(finder, combo, mapped=mapped, controller=self.controller))
         text.append(f'\nOpening attack startup: {startup_label} (movement, jump travel and charge preparation excluded).\n')
         if combo['evidence']['kind'] == 'published_recipe':
             text.append(f"\n{kind}: {combo['evidence'].get('title', '')}\n")

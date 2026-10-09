@@ -18,6 +18,8 @@ DEFAULT_PROFILES = {
                                'R1': '#FFFFFF', 'R2': '#FFFFFF'}},
 }
 DIFFICULTY_LIMITS = {'easy': 3, 'medium': 7, 'hard': float('inf')}
+# Timing must dominate short routes: even one 1–2 frame link is hard.
+LINK_TIMING_POINTS = {1: 10, 2: 8, 3: 4, 4: 2, 5: 1}
 
 
 class ComboFinder:
@@ -254,7 +256,7 @@ class ComboFinder:
                 components['route_timing'] += 2
                 reasons.append(f"{move['name']}: timing/position adjustment (+2).")
         for index, kind in enumerate(combo['transitions']):
-            if kind != 'link':
+            if kind not in ('link', 'documented_link'):
                 if kind in ('juggle', 'crumple', 'delayed_cancel'):
                     components['route_timing'] += 2
                     reasons.append(f'Transition {index + 1}: {kind.replace("_", " ")} timing (+2).')
@@ -271,12 +273,20 @@ class ComboFinder:
             if variable:
                 advantage = hit.get('advantage_max' if self.optimistic_links else 'advantage_min')
             _, entry = self._entry(self.moves[combo['moves'][index + 1]])
+            if (hit.get('state') != 'normal' or not isinstance(advantage, (int, float))
+                    or entry is None or not isinstance(entry.get('startup'), (int, float))
+                    or advantage < entry['startup']):
+                caveats.append(f'Link {index + 1}: timing is unknown for this setup; precision is not scored.')
+                continue
             window = advantage - entry['startup'] + 1
-            points = 3 if window <= 1 else 2 if window <= 2 else 1 if window <= 3 else 0
+            points = next((points for frames, points in LINK_TIMING_POINTS.items()
+                           if window <= frames), 0)
             components['links'] += points + (1 if variable else 0)
             link_windows.append({'from': combo['moves'][index], 'to': combo['moves'][index + 1],
-                                 'nominal_frames': window, 'variable_advantage': variable})
-            reasons.append(f'Link {index + 1}: nominal {window:g}-frame window (+{points}).')
+                                 'nominal_frames': window, 'nominal_ms': window * 1000 / 60,
+                                 'variable_advantage': variable})
+            reasons.append(f'Link {index + 1}: nominal {window:g}-frame window '
+                           f'({window * 1000 / 60:.1f} ms; +{points} timing points).')
             if variable:
                 reasons.append(f'Link {index + 1}: variable contact timing (+1).')
         if link_windows:
