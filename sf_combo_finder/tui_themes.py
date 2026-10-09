@@ -89,7 +89,7 @@ def save_theme(name: str, path: Path | None = PREFERENCES_PATH) -> None:
     save_preference('theme', name, path)
 
 
-def save_preference(key: str, value: str, path: Path | None) -> None:
+def save_preference(key: str, value: str | list[str], path: Path | None) -> None:
     if path is None:
         return
     try:

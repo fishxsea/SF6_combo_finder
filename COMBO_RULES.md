@@ -87,6 +87,15 @@ The OD Chaser follow-up costs no additional Drive bars. Resource regeneration
 during a combo is not modeled, so some routes may need less starting meter in
 the game than this conservative sum.
 
+## Setup labels
+
+The table labels recorded corner setups, starting states, opening hit conditions,
+poison, stance/charge and movement requirements. It lists other published setups
+for the same inputs. Prefixes inherit full-recipe conditions; a corner recipe
+does not establish that every prefix requires the corner. Starting-posture
+filters check explicitly recorded recipe requirements. No collision, pushback,
+scaled-damage or measured-input-window subsystem is included.
+
 ## Data references
 
 [Ultimate Frame Data's A.K.I. measurements](https://ultimateframedata.com/sf6/aki)
@@ -146,9 +155,9 @@ route's `candidate` status or validates its spacing.
 
 `raw dmg` sums all hits in the move damage lists, applying the route's poison
 and move-specific conditions. JSON exposes it as `damage.raw_total`, with
-`damage.scaling_applied` set to false. Combo scaling, counter-hit damage
-multipliers, minimum damage rules and poison damage over time are not
-calculated. This is a base damage total, not expected damage in training mode.
+`damage.scaling_applied` set to false. This field does not apply combo scaling,
+counter-hit damage multipliers or poison damage over time.
+The raw total is base damage, not expected damage in training mode.
 Projectile contact and aerial variants can change the number of connected hits;
 the total uses the listed move variant rather than measuring those contacts.
 

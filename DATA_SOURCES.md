@@ -30,8 +30,8 @@ unknown knockdown/juggle timing never becomes ordinary grounded links.
 The upstream Yasmine snapshot lacks many startup/damage values; those moves
 remain excluded. Imported target-combo entries retain constituent input counts
 but require reviewed full routes before appearing in generated output. Frame
-data sources do not supply published combo recipes, so `--documented-only`
-currently uses A.K.I.'s curated routes.
+data sources do not supply published combo recipes; `--documented-only` uses
+the separately imported published routes described below.
 
 The original A.K.I. references are:
 
@@ -119,7 +119,8 @@ before claiming a recipe works on the current patch.
 for hit rectangles, action triggers and damage/hit tables, including hitstun,
 movement and juggle parameters. Its Dump controls can regenerate data from an
 installed game version. This project does not currently import or simulate
-those dumps.
+those dumps. Unused collision/scaling fields are not copied into the runtime
+roster; the source snapshots retain their original data for reference.
 
 Current dumps plus replay/training-mode validation would support a more complete
 search. A simulator would also need collision, pushback, airborne trajectories,

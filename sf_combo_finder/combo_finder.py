@@ -6,6 +6,8 @@ from pathlib import Path
 import re
 import random
 import sys
+from .combo_setups import route_requirements
+from .combo_library import combo_identity
 
 DATA_PATH = Path(__file__).with_name('characters.json')
 CONTROLLERS = ('xbox', 'playstation')
@@ -28,7 +30,8 @@ class ComboFinder:
                  drive_meter=6, super_meter=3, opponent_poisoned=False,
                  optimistic_links=False, explore_light_chains=False,
                  max_difficulty=None, no_jumping=False, position='midscreen',
-                 opponent_state='grounded', documented_only=False, controller='xbox'):
+                 opponent_state='grounded', documented_only=False, controller='xbox',
+                 opponent_posture='any'):
         if data is None:
             with Path(data_path).open(encoding='utf-8') as source:
                 data = json.load(source)
@@ -59,6 +62,9 @@ class ComboFinder:
             raise ValueError('Position must be midscreen, corner, or any')
         if opponent_state not in ('grounded', 'airborne'):
             raise ValueError('Opponent state must be grounded or airborne')
+        if opponent_posture not in ('any', 'standing', 'crouching'):
+            raise ValueError('Opponent posture must be any, standing or crouching')
+        self.opponent_posture = opponent_posture
         self.position = position
         self.opponent_state = opponent_state
         self.documented_only = documented_only
@@ -71,6 +77,16 @@ class ComboFinder:
         self.optimistic_links = optimistic_links
         self.found_combos = []
         self._validate_documented_routes()
+        self._variation_index = {}
+        for recipe in self.documented_routes:
+            for end, key in enumerate(recipe['moves'], 1):
+                if not self.moves[key].get('damage') and not self.moves[key].get('damage_unknown'):
+                    continue
+                identity = combo_identity({'character': self.character,
+                                           'inputs': [self.moves[item]['input']['sf'] for item in recipe['moves'][:end]]})
+                variants = self._variation_index.setdefault(identity, [])
+                if recipe['conditions'] not in variants:
+                    variants.append(dict(recipe['conditions']))
 
     def _validate_documented_routes(self):
         """Reject broken recipe references rather than silently losing routes."""
@@ -113,15 +129,17 @@ class ComboFinder:
                 'overdrive' in move.get('properties', []) else 0, move.get('super_level', 0))
 
     def _resolve(self, move, poisoned, starter):
-        result = deepcopy(move)
+        # Copy fields changed by condition resolution; share the static move data.
+        result = dict(move)
+        result['hit'] = deepcopy(move.get('hit', {}))
         for key, enabled in (('opponent_poisoned', poisoned),
                              (self.hit_type, starter and self.hit_type != 'normal')):
             if enabled:
                 for field, value in move.get('conditions', {}).get(key, {}).items():
                     if isinstance(value, dict) and isinstance(result.get(field), dict):
-                        result[field].update(value)
+                        result[field] = {**result[field], **deepcopy(value)}
                     else:
-                        result[field] = value
+                        result[field] = deepcopy(value)
         # A counter affects the first hit, not the final hit of a target combo
         # or multi-hit attack. Explicit move-specific hit data is already final.
         override = move.get('conditions', {}).get(self.hit_type, {}) if starter else {}
@@ -299,6 +317,17 @@ class ComboFinder:
                     reasons=reasons, link_windows=link_windows,
                     caveats=list(dict.fromkeys(caveats)))
 
+    def _describe_setup(self, combo):
+        requirements = route_requirements(self, combo)
+        variations = self._variation_index.get(combo_identity(combo), [])
+        if requirements or variations:
+            combo['setup'] = {}
+            if requirements:
+                combo['setup']['requirements'] = requirements
+            if variations:
+                combo['setup']['published_variations'] = variations
+        return combo
+
     def _iter_documented_combos(self):
         """Yield only sourced complete routes and their prefixes, never stitch them."""
         for recipe in self.documented_routes:
@@ -309,6 +338,9 @@ class ComboFinder:
                     (self.position != 'any' and conditions['position'] not in ('any', self.position))):
                 continue
             route, length, drive, super_meter, raw_damage = [], 0, 0, 0, 0
+            posture = conditions.get('opponent_posture', 'any')
+            if self.opponent_posture != 'any' and posture not in ('any', self.opponent_posture):
+                continue
             poisoned, hit_started, damage_known = self.opponent_poisoned, False, True
             for index, key in enumerate(recipe['moves']):
                 move = self.moves[key]
@@ -350,7 +382,7 @@ class ComboFinder:
                              notes=['Published recipe/prefix; not tested in the current game patch.'] +
                                    recipe.get('notes', []))
                 combo['difficulty'] = self.estimate_difficulty(combo)
-                yield combo
+                yield self._describe_setup(combo)
 
     def iter_combos(self):
         """Yield all candidates within the configured input length and meter limits.
@@ -388,6 +420,10 @@ class ComboFinder:
                            damage={'raw_total': raw_damage, 'scaling_applied': False},
                            drive_spent=self.drive_meter - drive,
                            super_spent=self.super_meter - meter, hit_type=self.hit_type,
+                           conditions={'position': self.position, 'hit_type': self.hit_type,
+                                       'opponent_state': self.opponent_state,
+                                       'opponent_posture': self.opponent_posture,
+                                       'opponent_poisoned': self.opponent_poisoned},
                            notes=list(dict.fromkeys(notes)), status='candidate')
                 combo['evidence'] = {'kind': 'frame_timing'}
                 attribution = self.data['characters'][self.character].get('data_source')
@@ -403,7 +439,7 @@ class ComboFinder:
                     # Any published version takes precedence over a theoretical
                     # route with the same moves in the selected scenario.
                     if tuple(route) not in documented_moves:
-                        yield combo
+                        yield self._describe_setup(combo)
             if length >= self.max_combo_length:
                 return
             for key, move in eligible.items():
@@ -520,6 +556,8 @@ def main():
                         help='Filter published recipes by screen position (default: midscreen); any labels position-dependent output')
     parser.add_argument('--opponent-state', choices=['grounded', 'airborne'], default='grounded',
                         help='Opponent state at the opening hit; airborne uses sourced routes only (default: grounded)')
+    parser.add_argument('--opponent-posture', choices=['any', 'standing', 'crouching'], default='any',
+                        help='Starting posture; checks explicit published posture requirements')
     parser.add_argument('--documented-only', action='store_true',
                         help='Show source-labelled Capcom trial transcriptions and community recipes/prefixes for all characters; coverage is incomplete')
     parser.add_argument('--starred-only', action='store_true',
@@ -585,6 +623,7 @@ def main():
                 character=args.character, min_length=args.min_length, max_length=args.max_length,
                 sample_size=None,
                 hit_type=args.hit_type, position=args.position, opponent_state=args.opponent_state,
+                opponent_posture=args.opponent_posture,
                 drive_meter=args.drive_meter, super_meter=args.super_meter,
                 max_difficulty=args.max_difficulty, no_specials=args.no_specials,
                 no_jumping=args.no_jumping, opponent_poisoned=args.opponent_poisoned,
@@ -620,6 +659,7 @@ def main():
                               max_difficulty=args.max_difficulty,
                               no_jumping=args.no_jumping, position=args.position,
                               opponent_state=args.opponent_state,
+                              opponent_posture=args.opponent_posture,
                               documented_only=args.documented_only,
                               controller=args.controller or 'xbox') for c in selected]
         sampled = None

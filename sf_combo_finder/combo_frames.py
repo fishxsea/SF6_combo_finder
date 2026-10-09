@@ -25,7 +25,7 @@ def _advantage(finder, move):
 def _input_window(text, frames=None):
     unit = 'frame' if frames == 1 else 'frames'
     label = (f'{frames * 1000 / 60:.1f} ms ({frames:g} {unit}; nominal link window)'
-             if _number(frames) else 'unknown (exact input window unavailable)')
+             if _number(frames) else 'unavailable for this transition')
     text.append('   Time to input next move: ' + label + '\n', style='bold')
 
 
@@ -53,7 +53,7 @@ def _followup(text, finder, previous, following, kind):
         advantage, note = _advantage(finder, previous)
         if previous.get('hit', {}).get('state') != 'normal' or not _number(advantage):
             _input_window(text)
-            text.append('   Link timing: unknown for this hit state/setup.\n')
+            text.append('   Use the published setup and timing notes.\n')
             return
         supported = _number(startup) and startup <= advantage
         _input_window(text, advantage - startup + 1 if supported else None)
@@ -81,10 +81,10 @@ def _followup(text, finder, previous, following, kind):
                             + ' (not a button-input window).\n')
             else:
                 text.append('   Stored frames do not support an immediate cancel for this setup.\n')
-        text.append('   Cancel during the move; exact input window: unknown.\n')
+        text.append('   Cancel during the preceding move.\n')
     else:
         _input_window(text)
-        text.append('   Follow-up input window: unknown; use the published route notes.\n')
+        text.append('   Use the published follow-up timing notes.\n')
 
 
 def frame_details(finder, combo, *, mapped=True, controller=None):
@@ -119,7 +119,7 @@ def frame_details(finder, combo, *, mapped=True, controller=None):
             suffix = f' (target input {stage + 1}/{len(sequence)})' if len(sequence) > 1 else ''
             text.append(f' — {move["name"]}{suffix}\n')
             if not attacks:
-                text.append('   Movement/stance timing: unknown; not an attack startup.\n')
+                text.append('   Movement/stance action; follow the route notes.\n')
             elif len(sequence) == 1:
                 _move_frames(text, finder, effective, startup=effective.get('startup'))
             elif stage == 0:
@@ -136,7 +136,7 @@ def frame_details(finder, combo, *, mapped=True, controller=None):
             if stage < len(sequence) - 1:
                 text.append('   ↓ TARGET COMBO\n', style='bold')
                 _input_window(text)
-                text.append('   Use the target follow-up during the move; exact input window: unknown.\n')
+                text.append('   Use the target follow-up during the preceding move.\n')
             text.append('\n')
         if index < len(combo['moves']) - 1:
             following = finder.moves[combo['moves'][index + 1]]

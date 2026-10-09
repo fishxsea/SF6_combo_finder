@@ -19,11 +19,15 @@ from textual.worker import get_current_worker
 
 from .combo_finder import CONTROLLERS, DATA_PATH
 from .combo_frames import frame_details
+from .combo_setups import route_requirements, variation_label
 from .combo_library import ComboLibrary, LIBRARY_PATH
-from .tui_search import (SearchResult, SearchSettings, search_combos, sort_combo_rows,
-                         combo_startup, combo_poison_notes)
+from .tui_search import (SearchResult, SearchSettings, search_route_pool, route_pool_settings,
+                         filter_route_pool, sort_combo_rows,
+                         combo_startup, combo_poison_notes, sample_combo_rows,
+                         combo_row_key, index_combo_rows, retain_combo_rows)
 from .tui_themes import (DEFAULT_THEME, PALETTES, PREFERENCES_PATH, load_theme, save_theme,
                         load_controller, save_controller)
+from .tui_columns import COLUMNS, DEFAULT_COLUMNS, load_columns, save_columns
 
 
 class SearchProgress(Message):
@@ -33,9 +37,18 @@ class SearchProgress(Message):
 
 
 class SearchCompleted(Message):
-    def __init__(self, generation: int, result: SearchResult | None, error: str = ''):
+    def __init__(self, generation: int, result: SearchResult | None, error: str = '', *, index=None):
         super().__init__()
         self.generation, self.result, self.error = generation, result, error
+        self.index = index
+
+
+class PoisonCacheCompleted(Message):
+    def __init__(self, cache_generation: int, settings: SearchSettings,
+                 result: SearchResult | None, index=None, error: str = ''):
+        super().__init__()
+        self.cache_generation, self.settings = cache_generation, settings
+        self.result, self.index, self.error = result, index, error
 
 
 class HelpScreen(ModalScreen):
@@ -52,14 +65,21 @@ class HelpScreen(ModalScreen):
             yield Static(
                 'Change filters, then press Search or Ctrl+R. Enter in a numeric field also searches. '
                 'The browser waits for Search before finding combos. Random count starts blank '
-                'to show all matches. Set a count to sample results; Shuffle repeats the '
-                'search with a new random sample. Sort by character, difficulty, length or '
+                'to show all matches. Set a count to sample results; Shuffle chooses a new '
+                'sample from the cached search pool. Route checkboxes filter cached routes, '
+                'including both optimistic-link and light-chain modes. Character, length, '
+                'meter and starting-condition changes load another pool. '
+                'Sort by character, difficulty, length or '
                 'raw damage or opening attack startup, in ascending or descending order, without searching again. '
                 'Startup uses the first damaging attack; movement, jump travel and charge preparation '
                 'are excluded. Unknown startup stays last in either direction.\n\n'
                 'DISPLAY → Controller buttons: Xbox or PlayStation symbols. Changes apply '
                 'immediately and are saved; SF notation displays the original move inputs. '
                 'Button colors use explicit RGB values, independent of the terminal palette.\n\n'
+                'Columns: choose which table columns to display, then Apply. The default '
+                'columns are Diff / len / dmg (with poison badges), Combo, Fighter, Source '
+                'and Startup. Defaults restores that layout. Choices are saved. Hiding a '
+                'column keeps its information available in Details.\n\n'
                 'Tab / Shift+Tab: move between controls\n'
                 'Arrow keys: navigate results\n'
                 'Enter on a result: open its details\n'
@@ -77,9 +97,16 @@ class HelpScreen(ModalScreen):
                 'and source links; timing candidates still require spacing checks.\n\n'
                 '[Poison] in an A.K.I. table row marks a poison interaction or a published '
                 'starting-poison requirement. Details explain the affected moves; a badge '
-                'does not always require starting poisoned.\n\n'
+                'does not always require starting poisoned. A.K.I. searches load the selected '
+                'poison state first and prepare the other in the background. Toggling poison '
+                'reuses completed pools and keeps displayed routes that still connect. '
+                'Counts can change when poison changes valid follow-ups.\n\n'
                 'Grounded/midscreen/normal/unpoisoned are the default starting conditions. '
                 'Choose Corner, Poisoned or Counter to find routes for those situations. '
+                'Opponent state and posture select recorded starting conditions. '
+                'Setup / requirements and Published setups show recorded variations. '
+                '[Corner] marks a recorded corner setup. Source distinguishes published '
+                'routes from timing candidates. '
                 'Documented only excludes automatically generated timing candidates. '
                 'Optimistic links and unrestricted light chains are exploration options.\n\n'
                 'Star saves a favorite; Hide excludes a combo from future searches. '
@@ -98,6 +125,52 @@ class HelpScreen(ModalScreen):
 
     @on(Button.Pressed, '#close-help')
     def close_help(self) -> None:
+        self.dismiss()
+
+
+class ColumnsScreen(ModalScreen):
+    BINDINGS = [('escape', 'dismiss', 'Cancel')]
+    DEFAULT_CSS = """
+    ColumnsScreen { align: center middle; background: $cf-background 85%; }
+    #columns-box { width: 48; max-width: 95%; height: auto; max-height: 90%;
+                   border: round $cf-primary; padding: 1 2; background: $cf-background; }
+    #columns-box Checkbox { width: 100%; height: 1; border: none; padding: 0; margin: 0 0 1 0; }
+    #columns-actions { height: 1; margin-top: 1; }
+    #columns-actions Button { margin-right: 1; }
+    #columns-warning { height: 1; color: $cf-secondary; }
+    """
+
+    def __init__(self, selected):
+        super().__init__()
+        self.selected = selected
+
+    def compose(self):
+        with VerticalScroll(id='columns-box'):
+            yield Label('TABLE COLUMNS')
+            for key, label in COLUMNS:
+                yield Checkbox(label, key in self.selected, id=f'column-{key}')
+            yield Static('', id='columns-warning', markup=False)
+            with Horizontal(id='columns-actions'):
+                yield Button('Apply', variant='primary', id='apply-columns')
+                yield Button('Defaults', id='default-columns')
+                yield Button('Cancel', id='cancel-columns')
+
+    @on(Button.Pressed, '#apply-columns')
+    def apply_columns(self):
+        selected = tuple(key for key, _ in COLUMNS if self.query_one(f'#column-{key}', Checkbox).value)
+        if not selected:
+            self.query_one('#columns-warning', Static).update('Select at least one column.')
+            return
+        self.dismiss(selected)
+
+    @on(Button.Pressed, '#default-columns')
+    def default_columns(self):
+        for key, _ in COLUMNS:
+            self.query_one(f'#column-{key}', Checkbox).value = key in DEFAULT_COLUMNS
+        self.query_one('#columns-warning', Static).update('')
+
+    @on(Button.Pressed, '#cancel-columns')
+    def cancel_columns(self):
         self.dismiss()
 
 
@@ -180,7 +253,7 @@ class ComboFinderApp(App):
     .pair Vertical { width: 1fr; height: auto; margin-right: 1; }
     #overview-panel { height: 8; margin-top: 1; padding: 0 1; border: round $cf-border; border-title-color: $cf-muted; }
     #overview { height: auto; }
-    #details { height: 40; margin-top: 1; padding: 0 1; border: round $cf-border; border-title-color: $cf-muted; }
+    #details { height: 45vh; min-height: 4; margin-top: 1; padding: 0 1; border: round $cf-border; border-title-color: $cf-muted; }
     #detail-text { height: auto; }
     Screen.compact #selection-panel { height: 9; }
     Screen.compact #selected-combo { max-height: 2; margin-bottom: 0; }
@@ -197,6 +270,7 @@ class ComboFinderApp(App):
                  library_path: Path | None = LIBRARY_PATH, controller: str | None = None):
         super().__init__()
         self.preferences_path = preferences_path
+        self.visible_columns = load_columns(preferences_path)
         self.controller = controller if controller is not None else load_controller(preferences_path)
         if self.controller not in CONTROLLERS:
             raise ValueError(f'Unknown controller: {self.controller}')
@@ -219,7 +293,7 @@ class ComboFinderApp(App):
         self.data_path = Path(data_path)
         initial_settings = settings or SearchSettings()
         self.settings = replace(initial_settings, character=initial_settings.character.lower(),
-                                sample_size=None, opponent_state='grounded',
+                                sample_size=None,
                                 opponent_poisoned=(initial_settings.opponent_poisoned
                                                    and initial_settings.character.lower() == 'aki'))
         with self.data_path.open(encoding='utf-8') as source:
@@ -230,6 +304,13 @@ class ComboFinderApp(App):
             raise ValueError(f'Unknown character: {self.settings.character}')
         self.mapped, self.show_details = mapped, show_details
         self.rows = []
+        self.combo_pool = None
+        self.pool_settings = None
+        self.combo_pools = {}
+        self.cache_generation = 0
+        self.poison_cache_worker = None
+        self.warming_pool_settings = None
+        self.pending_poison_settings = None
         self.generation = 0
         self.render_generation = 0
         self.search_worker = None
@@ -253,7 +334,8 @@ class ComboFinderApp(App):
                     with Horizontal(id='command-bar'):
                         yield Button('Search', variant='primary', id='search')
                         yield Button('Shuffle', id='shuffle', disabled=True,
-                                     tooltip='After searching, repeat with a new random sample; blank count uses 25.')
+                                     tooltip='Choose a new sample from the cached matching pool; blank count uses 25.')
+                        yield Button('Columns', id='choose-columns', tooltip='Choose which table columns to show. Your layout is saved.')
                         yield Button('Cancel', id='cancel', disabled=True)
                         yield Static('Difficulty ↑', id='sort-label', markup=False)
                     with Horizontal(id='sort-bar'):
@@ -310,6 +392,14 @@ class ComboFinderApp(App):
                     yield Select([('Midscreen', 'midscreen'), ('Corner', 'corner'), ('Any position', 'any')],
                                  value=s.position, allow_blank=False, id='position',
                                  tooltip='Position filter for published routes. Any labels the required position.')
+                    yield Label('Opponent state')
+                    yield Select([('Grounded', 'grounded'), ('Airborne', 'airborne')],
+                                 value=s.opponent_state, allow_blank=False, id='opponent-state',
+                                 tooltip='Airborne starts use published routes; trajectory remains unverified.')
+                    yield Label('Opponent posture', id='opponent-posture-label')
+                    yield Select([('Unspecified', 'any'), ('Standing', 'standing'), ('Crouching', 'crouching')],
+                                 value=s.opponent_posture, allow_blank=False, id='opponent-posture',
+                                 tooltip='Filter published routes with explicit standing/crouching requirements.')
                     with Horizontal(classes='pair'):
                         with Vertical():
                             yield Label('Drive bars')
@@ -319,7 +409,7 @@ class ComboFinderApp(App):
                             yield Label('Super bars')
                             yield Input(str(s.super_meter), type='integer', id='super-meter', tooltip='0–3; supers cost their level.')
                     yield Checkbox('Opponent poisoned', s.opponent_poisoned, id='poisoned',
-                                   tooltip='Start poisoned; poison and detonation changes are applied along the route.')
+                                   tooltip='Switch cached starting-poison variants, keeping displayed routes that still connect. Poison can change damage and valid follow-ups.')
                     yield Label('ROUTE OPTIONS', classes='section')
                     yield Checkbox('Documented only', s.documented_only, id='documented',
                                    tooltip='Capcom trial transcriptions and community recipes for all characters, with source labels. Includes attack-ending prefixes; coverage is incomplete.')
@@ -359,11 +449,10 @@ class ComboFinderApp(App):
             self.query_one(f'#{widget_id}').border_title = title
         self.query_one('#details').display = self.show_details
         self.query_one('#toggle-details', Button).set_class(self.show_details, 'nav-active')
-        self.resize_details(self.size.height)
-        self.update_poison_control(self.settings.character)
+        self.update_character_controls(self.settings.character)
         self.set_filters_visible(self.size.width >= 110)
         table = self.query_one('#results', DataTable)
-        table.add_columns('Difficulty / len / raw dmg', 'Combo', 'Fighter', 'Position', 'Source', 'Startup')
+        self.configure_columns(table)
         table.focus()
         self.reset_combo_selection('Choose filters, then press Search.')
         self.update_overview()
@@ -414,25 +503,32 @@ class ComboFinderApp(App):
     def on_resize(self, event: Resize) -> None:
         if self.screen_stack:
             self.screen_stack[0].set_class(event.size.height < 32, 'compact')
-        self.resize_details(event.size.height)
 
-    def resize_details(self, terminal_height: int) -> None:
-        # Reserve room for navigation, the selected combo and the results.
-        reserved = 26 if terminal_height < 32 else 28
-        for details in self.query('#details'):
-            details.styles.height = min(40, max(4, terminal_height - reserved))
-
-    def update_poison_control(self, character: str) -> None:
+    def update_character_controls(self, character: str) -> None:
+        selected = self.characters.values() if character == 'all' else [self.characters.get(character, {})]
+        has_posture = any(recipe.get('conditions', {}).get('opponent_posture', 'any') != 'any'
+                          for entry in selected for recipe in entry.get('documented_combos', []))
+        posture = self.query_one('#opponent-posture', Select)
+        posture.display = has_posture
+        self.query_one('#opponent-posture-label', Label).display = has_posture
+        if not has_posture:
+            with posture.prevent(Select.Changed):
+                posture.value = 'any'
         poisoned = self.query_one('#poisoned', Checkbox)
         poisoned.display = character == 'aki'
         if character != 'aki':
             # Changing fighters applies on Search, like the other Select fields.
+            if self.pending_poison_settings is not None:
+                self.pending_poison_settings = None
+                if not self.searching:
+                    self.query_one('#cancel', Button).disabled = True
+                    self.update_results_status()
             with poisoned.prevent(Checkbox.Changed):
                 poisoned.value = False
 
     @on(Select.Changed, '#character')
     def character_changed(self, event: Select.Changed) -> None:
-        self.update_poison_control(str(event.value))
+        self.update_character_controls(str(event.value))
 
     def set_filters_visible(self, visible: bool) -> None:
         self.query_one('#sidebar').display = visible
@@ -486,7 +582,8 @@ class ComboFinderApp(App):
             character=selected('character'), min_length=number('min-length', 'Minimum length'),
             max_length=number('max-length', 'Maximum length'),
             sample_size=number('random-count', 'Random count', optional=True),
-            hit_type=selected('hit-type'), position=selected('position'), opponent_state='grounded',
+            hit_type=selected('hit-type'), position=selected('position'), opponent_state=selected('opponent-state'),
+            opponent_posture=selected('opponent-posture'),
             drive_meter=number('drive-meter', 'Drive bars'), super_meter=number('super-meter', 'Super bars'),
             max_difficulty=None if difficulty == 'any' else difficulty,
             no_specials=checked('no-specials'), no_jumping=checked('no-jumping'),
@@ -499,13 +596,27 @@ class ComboFinderApp(App):
 
     @on(Button.Pressed, '#search')
     @on(Input.Submitted)
-    def action_search(self) -> None:
-        self.start_combo_search(close_filters=True)
-        if self.searching:
+    async def action_search(self) -> None:
+        try:
+            settings = self.read_settings()
+            if settings.sample_size is not None and settings.sample_size < 1:
+                raise ValueError('Random count must be positive, or blank for all results')
+        except ValueError as error:
+            self.query_one('#status', Static).update(str(error))
+            return
+        if not self.searching and (route_pool_settings(settings) in self.combo_pools or
+                (self.combo_pool is not None and
+                 self.poison_pool_key(settings) == self.poison_pool_key(self.settings))):
+            if self.size.width < 110:
+                self.set_filters_visible(False)
+            await self.switch_poison_pool(settings, shuffle=True)
+        else:
+            self.start_combo_search(close_filters=True, settings=settings)
+        if self.searching or self.combo_pool is not None:
             self.query_one('#results', DataTable).focus()
 
     @on(Checkbox.Changed)
-    def route_option_changed(self, event: Checkbox.Changed) -> None:
+    async def route_option_changed(self, event: Checkbox.Changed) -> None:
         if not self.route_controls_ready or event.checkbox.id not in {
                 'documented', 'no-jumping', 'no-specials', 'optimistic', 'explore', 'poisoned',
                 'starred-only', 'show-hidden', 'hidden-only'}:
@@ -515,21 +626,85 @@ class ComboFinderApp(App):
         # Ignore initial checkbox messages when the mounted values already
         # match the running search. SF notation has its own display handler.
         try:
-            if self.read_settings() == self.settings:
+            settings = self.read_settings()
+            if settings == self.settings:
+                if self.pending_poison_settings is not None and not self.searching:
+                    self.query_one('#cancel', Button).disabled = True
+                    self.update_results_status()
+                self.pending_poison_settings = None
                 return
-        except ValueError:
-            pass
+            if self.poison_pool_key(settings) == self.poison_pool_key(self.settings):
+                if settings.sample_size is not None and settings.sample_size < 1:
+                    raise ValueError('Random count must be positive, or blank for all results')
+                if self.searching:
+                    # Apply the latest options to the broad pool when it finishes.
+                    self.pending_poison_settings = settings
+                else:
+                    await self.switch_poison_pool(settings)
+                return
+        except ValueError as error:
+            self.query_one('#status', Static).update(str(error))
+            return
         self.start_combo_search(close_filters=False)
+
+    @staticmethod
+    def poison_pool_key(settings: SearchSettings) -> SearchSettings:
+        return replace(route_pool_settings(settings), opponent_poisoned=False)
+
+    def clear_pool_cache(self) -> None:
+        self.cache_generation += 1
+        if self.poison_cache_worker and not self.poison_cache_worker.is_finished:
+            self.poison_cache_worker.cancel()
+        self.poison_cache_worker = None
+        self.warming_pool_settings = None
+        self.combo_pools.clear()
+        self.pending_poison_settings = None
+        self.combo_pool = None
+        self.pool_settings = None
+
+    def prepare_poison_pool(self, settings: SearchSettings) -> None:
+        key = route_pool_settings(settings)
+        if key in self.combo_pools or key == self.warming_pool_settings:
+            return
+        self.warming_pool_settings = key
+        self.poison_cache_worker = self.warm_poison_cache(key, self.cache_generation)
+
+    async def switch_poison_pool(self, settings: SearchSettings, *, shuffle=False) -> None:
+        key = route_pool_settings(settings)
+        if key not in self.combo_pools:
+            self.pending_poison_settings = settings
+            state = 'poisoned' if settings.opponent_poisoned else 'unpoisoned'
+            self.query_one('#status', Static).update(
+                f'Preparing {state} results in the background; current combos remain visible.')
+            self.query_one('#cancel', Button).disabled = False
+            self.prepare_poison_pool(key)
+            return
+        selected_index = self.query_one('#results', DataTable).cursor_row
+        selected_key = (combo_row_key(self.rows[selected_index])
+                        if 0 <= selected_index < len(self.rows) else None)
+        pool = filter_route_pool(self.combo_pools[key], settings, self.library)
+        rows = (sample_combo_rows(pool, settings.sample_size) if shuffle else
+                retain_combo_rows(pool, index_combo_rows(pool), self.rows, settings.sample_size))
+        self.pending_poison_settings = None
+        self.settings = settings
+        self.combo_pool, self.pool_settings = pool, key
+        self.generation += 1
+        self.query_one('#cancel', Button).disabled = True
+        self.query_one('#shuffle', Button).disabled = False
+        await self.present_results(rows, len(pool), self.generation, selected_key=selected_key)
 
     def start_combo_search(self, *, close_filters: bool, settings: SearchSettings | None = None) -> None:
         try:
             settings = settings if settings is not None else self.read_settings()
+            if settings.sample_size is not None and settings.sample_size < 1:
+                raise ValueError('Random count must be positive, or blank for all results')
         except ValueError as error:
             self.query_one('#status', Static).update(str(error))
             return
         self.settings = settings
         self.has_searched = True
-        self.query_one('#shuffle', Button).disabled = False
+        self.clear_pool_cache()
+        self.query_one('#shuffle', Button).disabled = True
         self.generation += 1
         if close_filters and self.size.width < 110:
             self.set_filters_visible(False)
@@ -547,7 +722,9 @@ class ComboFinderApp(App):
     def run_search(self, settings: SearchSettings, generation: int) -> None:
         worker = get_current_worker()
         try:
-            result = search_combos(settings, self.data_path, cancelled=lambda: worker.is_cancelled,
+            # Retain all matches; the UI samples this pool after completion.
+            result = search_route_pool(settings, self.data_path,
+                                   cancelled=lambda: worker.is_cancelled,
                                    progress=lambda count: self.post_message(SearchProgress(generation, count)),
                                    library=self.library.snapshot())
             if not worker.is_cancelled:
@@ -555,6 +732,39 @@ class ComboFinderApp(App):
         except Exception as error:
             if not worker.is_cancelled:
                 self.post_message(SearchCompleted(generation, None, str(error)))
+
+    @work(thread=True, exclusive=True, group='poison-cache')
+    def warm_poison_cache(self, settings: SearchSettings, cache_generation: int) -> None:
+        worker = get_current_worker()
+        try:
+            result = search_route_pool(settings, self.data_path, cancelled=lambda: worker.is_cancelled,
+                                   library=self.library.snapshot())
+            if not worker.is_cancelled and not result.cancelled:
+                self.post_message(PoisonCacheCompleted(cache_generation, settings, result))
+        except Exception as error:
+            if not worker.is_cancelled:
+                self.post_message(PoisonCacheCompleted(cache_generation, settings, None, error=str(error)))
+
+    async def on_poison_cache_completed(self, message: PoisonCacheCompleted) -> None:
+        # Shuffling and sorting do not invalidate the background cache.
+        if message.cache_generation != self.cache_generation:
+            return
+        if message.settings == self.warming_pool_settings:
+            self.warming_pool_settings = None
+        if message.error or message.result is None:
+            if self.pending_poison_settings is not None:
+                self.pending_poison_settings = None
+                self.query_one('#cancel', Button).disabled = True
+                poisoned = self.query_one('#poisoned', Checkbox)
+                with poisoned.prevent(Checkbox.Changed):
+                    poisoned.value = self.settings.opponent_poisoned
+                self.query_one('#status', Static).update(f'Could not prepare poison results: {message.error}')
+            return
+        self.combo_pools[message.settings] = message.result.route_pool
+        if self.pending_poison_settings is not None:
+            settings = self.pending_poison_settings
+            if route_pool_settings(settings) == message.settings:
+                await self.switch_poison_pool(settings)
 
     def on_search_progress(self, message: SearchProgress) -> None:
         if message.generation == self.generation:
@@ -567,23 +777,53 @@ class ComboFinderApp(App):
             return
         self.query_one('#cancel', Button).disabled = True
         self.searching = False
-        if message.error:
-            self.query_one('#status', Static).update(f'Search failed: {message.error}')
+        if message.error or message.result is None:
+            self.pending_poison_settings = None
+            error = message.error or 'No result returned'
+            self.query_one('#status', Static).update(f'Search failed: {error}')
             self.reset_combo_selection('Correct the filters and search again.')
             self.update_overview()
             return
-        self.rows = self.sorted_rows(message.result.rows)
-        self.match_count = message.result.total
-        self.update_overview()
-        await self.render_rows(message.generation)
+        if message.result.cancelled:
+            self.pending_poison_settings = None
+            self.query_one('#status', Static).update('Search cancelled. Adjust filters and search again.')
+            self.reset_combo_selection('No combo selected.')
+            self.update_overview()
+            return
+        self.pool_settings = route_pool_settings(self.settings)
+        self.combo_pools[self.pool_settings] = message.result.route_pool
+        if (self.pending_poison_settings is not None
+                and route_pool_settings(self.pending_poison_settings) == self.pool_settings):
+            self.settings = self.pending_poison_settings
+            self.pending_poison_settings = None
+        self.combo_pool = filter_route_pool(message.result.route_pool, self.settings, self.library)
+        self.query_one('#shuffle', Button).disabled = False
+        if self.settings.character == 'aki':
+            # Prepare the alternate while the completed results are being drawn.
+            alternate = replace(self.pool_settings, opponent_poisoned=not self.settings.opponent_poisoned)
+            self.prepare_poison_pool(alternate)
+        rows = sample_combo_rows(self.combo_pool, self.settings.sample_size)
+        await self.present_results(rows, len(self.combo_pool), message.generation)
         if message.generation != self.generation:
+            return
+        if self.pending_poison_settings is not None:
+            await self.switch_poison_pool(self.pending_poison_settings)
+
+    async def present_results(self, rows, total: int, generation: int, *, selected_key=None) -> None:
+        self.rows = self.sorted_rows(rows)
+        self.match_count = total
+        self.update_overview()
+        index = (next((i for i, row in enumerate(self.rows) if combo_row_key(row) == selected_key), 0)
+                 if selected_key else 0)
+        await self.render_rows(generation, selected_index=index)
+        if generation != self.generation:
             return
         if not self.rows:
             self.query_one('#status', Static).update('No matching combos. Try different lengths, meter, or starting conditions.')
             self.reset_combo_selection('No combo selected.')
         else:
             self.update_results_status()
-            self.update_details(0)
+            self.update_details(index)
 
     def sorted_rows(self, rows):
         return sort_combo_rows(rows, str(self.query_one('#sort-by', Select).value),
@@ -621,7 +861,8 @@ class ComboFinderApp(App):
         self.render_generation += 1
         render_generation = self.render_generation
         table = self.query_one('#results', DataTable)
-        table.clear()
+        table.clear(columns=True)
+        self.configure_columns(table)
         mapped = not self.query_one('#sf-notation', Checkbox).value
         for index, (finder, combo) in enumerate(self.rows):
             if generation != self.generation or render_generation != self.render_generation:
@@ -630,9 +871,18 @@ class ComboFinderApp(App):
             style = {'easy': 'green', 'medium': 'yellow', 'hard': 'red'}[difficulty]
             raw_damage = combo['damage']['raw_total']
             source = combo['evidence'].get('source_label')
-            bracket = Text(f"[{difficulty} | len={combo['length']} | raw dmg={raw_damage if raw_damage is not None else 'unknown'}]", style=style)
+            damage_label = f'{raw_damage:,}' if raw_damage is not None else 'unknown'
+            bracket = Text(f"[{difficulty} | {combo['length']} | {damage_label}]", style=style)
             if combo_poison_notes(finder, combo):
                 bracket.append(' [Poison]', style=f'bold {self.palette_colors()["cf-secondary"]}')
+            conditions = combo.get('conditions', {})
+            if combo['evidence'].get('kind') == 'published_recipe' and conditions.get('position') == 'corner':
+                bracket.append(' [Corner]', style=f'bold {self.palette_colors()["cf-secondary"]}')
+            hit_type = conditions.get('hit_type', finder.hit_type)
+            if hit_type != 'normal':
+                bracket.append(' [CH]' if hit_type == 'counter' else ' [PC]')
+            if conditions.get('opponent_state', finder.opponent_state) == 'airborne':
+                bracket.append(' [Airborne]')
             starred, hidden = self.library.marks(combo)
             if starred:
                 bracket.append(' ★', style=self.palette_colors()['cf-primary'])
@@ -640,15 +890,45 @@ class ComboFinderApp(App):
                 bracket.append(' [hidden]', style=self.palette_colors()['cf-muted'])
             notation = Text.from_ansi(finder.format_combo(combo, mapped=mapped, color=mapped,
                                                        controller=self.controller))
-            position = combo.get('conditions', {}).get('position', '—')
+            published = combo['evidence'].get('kind') == 'published_recipe'
+            position = conditions.get('position', '—') if published else '—'
+            setup = combo.get('setup', {})
             startup = combo_startup(finder, combo)
             startup_label = f'{startup:g}f' if startup is not None else 'unknown'
-            table.add_row(bracket, notation, self.characters[finder.character].get('display_name', finder.character),
-                          position, source or 'Frame timing', startup_label, key=str(index))
+            cells = dict(summary=bracket, combo=notation,
+                         fighter=self.characters[finder.character].get('display_name', finder.character),
+                         position=position, source=source or 'Frame timing', startup=startup_label)
+            if 'requirements' in self.visible_columns:
+                cells['requirements'] = '; '.join(setup.get('requirements') or route_requirements(finder, combo)) or '—'
+            if 'variations' in self.visible_columns:
+                cells['variations'] = '; '.join(variation_label(item) for item in
+                                              setup.get('published_variations', [])) or '—'
+            table.add_row(*(cells[key] for key in self.visible_columns), key=str(index))
             if index % 100 == 99:
                 await asyncio.sleep(0)
         if self.rows:
             table.move_cursor(row=selected_index)
+
+    def configure_columns(self, table):
+        for key, label in COLUMNS:
+            if key in self.visible_columns:
+                table.add_column(label, key=key)
+
+    @on(Button.Pressed, '#choose-columns')
+    def choose_columns(self):
+        self.push_screen(ColumnsScreen(self.visible_columns), self.columns_selected)
+
+    async def columns_selected(self, selected):
+        if selected is None or selected == self.visible_columns:
+            return
+        self.visible_columns = selected
+        try:
+            save_columns(selected, self.preferences_path)
+        except OSError:
+            self.notify('Columns changed, but the layout could not be saved.', severity='warning')
+        table = self.query_one('#results', DataTable)
+        index = table.cursor_row
+        await self.render_rows(self.generation, selected_index=index)
 
     @on(Checkbox.Changed, '#sf-notation')
     async def notation_changed(self) -> None:
@@ -705,6 +985,7 @@ class ComboFinderApp(App):
                     f"raw damage {damage_label} · startup {startup_label}", style=colors['cf-primary'])
         meta.append(f'\n{position} · {kind}', style=colors['cf-muted'])
         poison_notes = combo_poison_notes(finder, combo)
+        text.append_text(frame_details(finder, combo, mapped=mapped, controller=self.controller))
         if poison_notes:
             meta.append(' · [Poison]', style=colors['cf-secondary'])
         starred, hidden = self.library.marks(combo)
@@ -733,15 +1014,22 @@ class ComboFinderApp(App):
             for note in poison_notes:
                 text.append(note + '\n')
             text.append('\n')
-        text.append_text(frame_details(finder, combo, mapped=mapped, controller=self.controller))
+        setup = combo.get('setup', {})
+        requirements = setup.get('requirements') or route_requirements(finder, combo)
+        if requirements:
+            text.append('\nSETUP / REQUIREMENTS\n', style='bold')
+            text.append(' · '.join(requirements) + '\n')
+        variations = setup.get('published_variations', [])
+        if variations:
+            text.append('Published setups for this input sequence:\n')
+            for variant in variations:
+                text.append('  • ' + variation_label(variant) + '\n')
         text.append(f'\nOpening attack startup: {startup_label} (movement, jump travel and charge preparation excluded).\n')
         if combo['evidence']['kind'] == 'published_recipe':
             text.append(f"\n{kind}: {combo['evidence'].get('title', '')}\n")
         text.append(f"\nDrive: {combo['drive_spent']}  Super: {combo['super_spent']}  "
                     f"Difficulty score: {combo['difficulty']['score']}\n")
         text.append('Transitions: ' + ' → '.join(combo['transitions']) + '\n')
-        if combo.get('conditions'):
-            text.append('Requires: ' + ', '.join(f'{key}={value}' for key, value in combo['conditions'].items()) + '\n')
         for source in combo['evidence'].get('sources', []):
             text.append(source + '\n', style=f'link {source}')
         text.append('Difficulty: ' + ', '.join(f'{key.replace("_", " ")}={value}'
@@ -775,25 +1063,46 @@ class ComboFinderApp(App):
         # in the ordinary view updates in place without changing the selection.
         if (mark == 'starred' and self.settings.starred_only) or (
                 mark == 'hidden' and (self.settings.hidden_only or not self.settings.show_hidden)):
-            self.start_combo_search(close_filters=False, settings=self.settings)
+            await self.switch_poison_pool(self.settings)
         else:
             await self.render_rows(self.generation, selected_index=index)
             self.update_details(index)
 
     @on(Button.Pressed, '#shuffle')
-    def action_shuffle(self) -> None:
-        if not self.has_searched:
+    async def action_shuffle(self) -> None:
+        if not self.has_searched or self.searching:
             return
         if not self.query_one('#random-count', Input).value.strip():
             self.query_one('#random-count', Input).value = '25'
-        self.action_search()
+        try:
+            settings = self.read_settings()
+            if settings.sample_size is not None and settings.sample_size < 1:
+                raise ValueError('Random count must be positive, or blank for all results')
+        except ValueError as error:
+            self.query_one('#status', Static).update(str(error))
+            return
+        key = route_pool_settings(settings)
+        if key not in self.combo_pools:
+            if (self.combo_pool is not None
+                    and self.poison_pool_key(settings) == self.poison_pool_key(self.settings)):
+                await self.switch_poison_pool(settings, shuffle=True)
+            else:
+                await self.action_search()
+            return
+        if self.size.width < 110:
+            self.set_filters_visible(False)
+        await self.switch_poison_pool(settings, shuffle=True)
+        self.query_one('#results', DataTable).focus()
 
     @on(Button.Pressed, '#cancel')
     def action_cancel_search(self) -> None:
-        if self.search_worker and not self.search_worker.is_finished:
-            self.search_worker.cancel()
+        if self.searching:
+            if self.search_worker:
+                self.search_worker.cancel()
             self.generation += 1
             self.rows = []
+            self.clear_pool_cache()
+            self.query_one('#shuffle', Button).disabled = True
             self.searching = False
             self.match_count = None
             self.query_one('#results', DataTable).clear()
@@ -801,6 +1110,17 @@ class ComboFinderApp(App):
             self.reset_combo_selection('No combo selected.')
             self.update_overview()
             self.query_one('#cancel', Button).disabled = True
+        elif self.pending_poison_settings is not None:
+            self.pending_poison_settings = None
+            self.cache_generation += 1
+            self.warming_pool_settings = None
+            if self.poison_cache_worker and not self.poison_cache_worker.is_finished:
+                self.poison_cache_worker.cancel()
+            poisoned = self.query_one('#poisoned', Checkbox)
+            with poisoned.prevent(Checkbox.Changed):
+                poisoned.value = self.settings.opponent_poisoned
+            self.query_one('#cancel', Button).disabled = True
+            self.update_results_status()
 
     @on(Button.Pressed, '#toggle-details')
     def action_details(self) -> None:

@@ -1,12 +1,13 @@
 """Search state shared by the Textual UI and dependency-free tests."""
-from dataclasses import dataclass, field
+from copy import copy
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 import json
 import random
 from typing import Callable
 
-from .combo_finder import ComboFinder, DATA_PATH
-from .combo_library import ComboLibrary
+from .combo_finder import ComboFinder, DATA_PATH, DIFFICULTY_LIMITS
+from .combo_library import ComboLibrary, combo_identity
 
 
 @dataclass(frozen=True)
@@ -18,6 +19,7 @@ class SearchSettings:
     hit_type: str = 'normal'
     position: str = 'midscreen'
     opponent_state: str = 'grounded'
+    opponent_posture: str = 'any'
     drive_meter: int = 6
     super_meter: int = 3
     max_difficulty: str | None = None
@@ -37,6 +39,143 @@ class SearchResult:
     rows: list[tuple[ComboFinder, dict]] = field(default_factory=list)
     total: int = 0
     cancelled: bool = False
+    route_pool: 'CachedRoutePool | None' = None
+
+
+@dataclass
+class CachedRoutePool:
+    """Prepared timing modes share move data and route metadata."""
+    modes: dict[tuple[bool, bool], list[tuple[ComboFinder, dict]]] = field(default_factory=dict)
+
+
+def route_pool_settings(settings):
+    """Only scenario/length/meter changes require another enumeration."""
+    return replace(settings, sample_size=None, max_difficulty=None,
+                   no_specials=False, no_jumping=False, documented_only=False,
+                   optimistic_links=True, explore_light_chains=True,
+                   starred_only=False, show_hidden=True, hidden_only=False)
+
+
+def filter_route_pool(pool, settings, library):
+    """Filter a prepared pool without enumerating routes or rereading data."""
+    if not library.entries and (settings.starred_only or settings.hidden_only):
+        return []
+    rows = []
+    for finder, combo in pool.modes[(settings.optimistic_links, settings.explore_light_chains)]:
+        published = combo['evidence']['kind'] == 'published_recipe'
+        if settings.documented_only and not published:
+            continue
+        moves = [finder.moves[key] for key in combo['moves']]
+        if settings.no_jumping and any(move['category'] == 'jump_normal' or
+                (published and move['input']['sf'].startswith(('7', '8', '9'))) for move in moves):
+            continue
+        allowed = ('normal', 'unique', 'jump_normal', 'target_combo', 'system') if published else (
+            'normal', 'unique', 'jump_normal', 'target_combo')
+        if settings.no_specials and any(move['category'] not in allowed for move in moves):
+            continue
+        if (settings.max_difficulty is not None and
+                combo['difficulty']['score'] > DIFFICULTY_LIMITS[settings.max_difficulty]):
+            continue
+        if library.entries and not library.matches(combo, show_hidden=settings.show_hidden,
+                hidden_only=settings.hidden_only, starred_only=settings.starred_only):
+            continue
+        rows.append((finder, combo))
+    return rows
+
+
+def search_route_pool(settings, data_path=DATA_PATH, *, cancelled=lambda: False,
+                      progress=lambda count: None, library=None):
+    """Enumerate permissive routes once, then prepare both timing/light modes."""
+    result = search_combos(route_pool_settings(settings), data_path, cancelled=cancelled,
+                           progress=progress, library=library)
+    if result.cancelled:
+        return result
+    pool = CachedRoutePool()
+    for optimistic in (False, True):
+        for explore in (False, True):
+            if optimistic and explore:
+                pool.modes[(optimistic, explore)] = result.rows
+                continue
+            finders, rows = {}, []
+            for original, combo in result.rows:
+                if cancelled():
+                    return SearchResult(cancelled=True)
+                if original.character not in finders:
+                    finder = copy(original)
+                    finder.optimistic_links, finder.explore_light_chains = optimistic, explore
+                    finders[original.character] = finder
+                finder = finders[original.character]
+                published = combo['evidence']['kind'] == 'published_recipe'
+                notes = combo['notes']
+                if not published:
+                    if not explore and any(not finder._light_sequence_supported(combo['moves'][:end])
+                                           for end in range(1, len(combo['moves']) + 1)):
+                        continue
+                    notes = [note for note in notes if not note.startswith(('Variable hit advantage:', 'Exploration:'))]
+                    if explore:
+                        notes.append('Exploration: unrestricted light strings; accumulated pushback is unchecked')
+                    previous, poisoned, valid = None, finder.opponent_poisoned, True
+                    for step, key in enumerate(combo['moves']):
+                        move = finder.moves[key]
+                        if previous is not None:
+                            transition = finder._transition(combo['moves'][step - 1], previous, key, move)
+                            if transition is None:
+                                valid = False
+                                break
+                            if transition[1]:
+                                notes.append(transition[1])
+                        previous, poisoned = finder._resolve(move, poisoned, step == 0)
+                    if not valid:
+                        continue
+                prepared = dict(combo)
+                prepared['notes'] = list(dict.fromkeys(notes))
+                prepared['difficulty'] = finder.estimate_difficulty(prepared)
+                rows.append((finder, prepared))
+            pool.modes[(optimistic, explore)] = rows
+    if cancelled():
+        return SearchResult(cancelled=True)
+    result.route_pool = pool
+    return result
+
+
+def sample_combo_rows(pool, sample_size, *, rng=None):
+    """Choose a fresh subset of a completed pool without generating combos."""
+    if sample_size is None:
+        return list(pool)
+    if sample_size < 1:
+        raise ValueError('Random count must be positive, or blank for all results')
+    return (rng or random).sample(pool, min(sample_size, len(pool)))
+
+
+def combo_row_key(row):
+    """Match input sequences across poison variants, keeping positions distinct."""
+    finder, combo = row
+    position = combo.get('conditions', {}).get('position', finder.position)
+    if position == 'any':
+        position = finder.position
+    return combo_identity(combo), position
+
+
+def index_combo_rows(rows):
+    return {combo_row_key(row): row for row in rows}
+
+
+def retain_combo_rows(pool, index, previous_rows, sample_size):
+    """Keep displayed routes valid in the new state, filling missing sample slots."""
+    if sample_size is None:
+        return list(pool)
+    if sample_size < 1:
+        raise ValueError('Random count must be positive, or blank for all results')
+    kept, seen = [], set()
+    for row in previous_rows:
+        key = combo_row_key(row)
+        if key in index and key not in seen:
+            kept.append(index[key])
+            seen.add(key)
+            if len(kept) == sample_size:
+                return kept
+    remaining = [row for key, row in index.items() if key not in seen]
+    return kept + sample_combo_rows(remaining, sample_size - len(kept))
 
 
 def combo_startup(finder, combo):
@@ -131,6 +270,7 @@ def search_combos(settings: SearchSettings, data_path: Path = DATA_PATH, *,
         not settings.no_specials, data_path=data_path, data=data,
         hit_type=settings.hit_type, position=settings.position,
         opponent_state=settings.opponent_state, drive_meter=settings.drive_meter,
+        opponent_posture=settings.opponent_posture,
         super_meter=settings.super_meter, max_difficulty=settings.max_difficulty,
         no_jumping=settings.no_jumping, opponent_poisoned=settings.opponent_poisoned,
         documented_only=settings.documented_only, optimistic_links=settings.optimistic_links,

@@ -66,17 +66,38 @@ The dashboard uses a charcoal background, orange panel accents, purple
 headers and plain combo rows, inspired by Bagels. Combos occupy the left
 panel; search controls and a session summary sit on the right.
 Edit filters in the right panel, then click **Search** or press **Ctrl+R**.
-TUI searches start with the opponent grounded; there is no opponent-state selector.
+Opponent state defaults to grounded; select Airborne for published air-start routes.
+Opponent posture can be unspecified, standing or crouching; it filters published
+recipes with explicit posture requirements. It is shown only for fighters with
+recorded posture requirements (or All characters). Changes apply on Search or Shuffle.
 The panel scrolls to reveal additional filters; hover controls for descriptions.
 After the first search, route-option checkboxes and **Opponent poisoned**
 automatically refresh the results when toggled. Before that, changes wait for
-**Search**. Other search fields apply when you press **Search**.
+**Search**. Documented only, Exclude jumping, Exclude specials, Optimistic links
+and Explore light chains all reuse the completed cache. Both link/light-chain
+modes are prepared during the first search, so toggling them never enumerates
+combos again. Favorite/hidden filters and maximum difficulty also filter cached
+routes. The first search includes a broader pool and can use more time/memory.
+Other search fields apply when you press **Search** or **Shuffle**.
 **Opponent poisoned** appears only when A.K.I. is selected; selecting another
-fighter or All characters clears that setting.
+fighter or All characters clears that setting. An A.K.I. search loads the selected
+poison state first, then prepares the other state in the background. Toggling
+poison reuses these pools, updates damage and frame details, and keeps displayed
+routes that still connect. Missing sample slots are filled from the new pool;
+the selected route stays selected when retained. Counts can change because
+Toxic Blossom changes valid follow-ups and published routes have starting-state
+requirements. If the alternate pool is still being prepared, current results
+remain visible until it is ready. Character, length, meter or starting-condition
+changes load a new pool. Route options preserve both poison caches.
 **Ctrl+B** or **Filters** toggles the panel. In terminals narrower than 110
 columns, it starts hidden and closes when searching to make room for results.
-**Shuffle** searches again with a new sample, defaulting to 25 when the field is
-blank. Shuffle becomes available after your first search.
+**Shuffle** chooses a fresh sample from the full cached matching pool, defaulting
+to 25 when the field is blank. It becomes available after a search completes.
+With unchanged filters, it samples and redraws without generating combos again.
+Changing character, length, meter or starting conditions rebuilds the pool;
+route options, maximum difficulty, Random count and prepared poison variants
+reuse it. Samples retain your selected sort order. Search also reuses a matching
+cache. Restart the app after changing the roster file to load new data.
 Results initially sort by difficulty across lengths and show the bracket on the
 left, followed by arrows and controller button colors. **SF notation** changes the
 display without rerunning the search.
@@ -88,6 +109,30 @@ off. Details name the affected moves and explain any starting-poison requirement
 Some routes apply poison during the combo, so the badge does not always mean
 you must start poisoned. Ordinary normal-only strings remain unmarked unless a
 published starting-poison condition applies to that route.
+
+The default table columns are **Diff / len / dmg**, **Combo**, **Fighter**,
+**Source**, and **Startup**. Damage in the first column is raw damage, with
+**[Poison]** beside it when applicable. Click **Columns**, choose the columns
+you want, then **Apply**. Your layout is saved for the next launch; **Defaults**
+restores these five columns. At least one column must remain selected.
+Column changes preserve the current results and selection without searching
+or resampling. Hidden information remains available in Details.
+
+Optional columns include **Position**, **Setup / requirements**, and **Published
+setups**. A **[Corner]** badge marks a recorded corner
+setup; **[CH]**, **[PC]**, and **[Airborne]** mark opening hit/state conditions.
+Requirements include close range, charge, stance, height, Drive Rush, walking
+and delayed timing when those requirements are recorded. Published setups lists
+the known sourced starting-condition variations for the same input sequence,
+including attack-ending prefixes. It does not claim exhaustive coverage.
+Prefix setup labels inherit their recipe's conditions; a corner-labelled prefix
+may also work elsewhere. The additional published setups column exposes known
+alternatives. To browse corner and midscreen recipes together, choose Any position.
+
+Source distinguishes published routes from timing candidates. Only recorded
+position/setup requirements are shown; generated routes use a dash when no
+requirement is recorded. Raw damage is the listed base total, before combo scaling
+and poison damage over time. No scaled-damage estimate is displayed.
 
 Use **Sort by** above the results to choose **Character**, **Difficulty**,
 **Length**, **Raw damage** or **Startup**, with **Ascending** or **Descending** order.
@@ -118,8 +163,8 @@ does not remove anything from `characters.json`.
 
 These filters apply before random sampling, so hidden routes do not consume
 your requested random count. Marking a star normally updates the current row;
-when a mark changes filtered membership, the app searches again to refill the
-pool. Like other route options, these filters refresh after your first Search
+when a mark changes filtered membership, the app refilters the cached pool and
+refills the sample. Like other route options, these filters refresh after your first Search
 and do not trigger a search at startup.
 
 The Details panel shows each combo input vertically with startup, active frames,
@@ -134,12 +179,15 @@ allows a latest start delay of one frame (16.7 ms), with two possible start fram
 buffer. Cancels show inferred hitstun and its margin, with exact input windows
 marked unknown. Missing frame data and individual target-combo timings stay
 unknown; hitstop, travel and spacing are not simulated.
+The move sequence appears first in Details, followed by poison interactions,
+recorded setups, difficulty explanations and source links. Research placeholders,
+raw collision/scaling metadata and speculative measurement import code are omitted.
 
 Difficulty gives tight link timing substantial weight across all characters:
 1–2 frame links (16.7–33.3 ms) rate **hard**, and 3-frame links (50.0 ms) rate
 at least **medium**, even in short combos. Multiple links add to the score.
-Details explain each known link's timing and points. Exact chain, cancel and
-target-combo input windows are not available and are not assigned precision scores.
+Details explain each known link's timing and points. Unmeasured chain, cancel and
+target-combo input windows stay unknown and are not assigned precision scores.
 
 The selected-combo panel below the table shows its notation, estimated
 difficulty, input count, raw damage, evidence type and Drive/Super usage bars.
@@ -191,15 +239,17 @@ Use **Tab / Shift+Tab** to switch controls, arrows to select a result, and
 **Enter** on a result or **Ctrl+D** to show details. Details include costs,
 transitions, difficulty components, conditions, notes and source links. They
 are hidden initially; `-v` opens them at launch. The Notes & sources panel now
-uses up to 40 lines, four times its former height, and shrinks in shorter
-terminals to leave room for the combo list. The results table scrolls
+uses 45% of the terminal height and grows or shrinks when you resize the terminal
+(with a four-line minimum). The results table scrolls
 horizontally for long combos and vertically for many results.
 
 **Ctrl+Y** copies the selected combo using the terminal's clipboard protocol
 (support depends on the terminal). **F1** opens help, **Escape** cancels a running
-search, and **Ctrl+Q** quits. Search runs in a background worker. Random sampling
-keeps only the selected results in memory, but still searches the entire pool;
-large length ranges can take time. Showing all matches retains the whole pool.
+search, and **Ctrl+Q** quits. Search runs in a background worker and keeps the
+full matching pool in memory for quick shuffling, even when only a sample is
+displayed. A.K.I. retains both starting-poison variants after the background
+search completes. Large length ranges can take time and use more memory. Cancelled or
+failed searches do not retain partial pools. The cache lasts for this app session.
 
 ## CLI
 
