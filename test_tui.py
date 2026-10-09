@@ -12,7 +12,8 @@ import unittest
 from unittest.mock import patch
 
 from sf_combo_finder.combo_finder import ComboFinder, main as cli_main
-from sf_combo_finder.tui_search import SearchResult, SearchSettings, search_combos, combo_startup
+from sf_combo_finder.tui_search import (SearchResult, SearchSettings, search_combos,
+                                      combo_startup, combo_poison_notes)
 from sf_combo_finder.combo_library import LIBRARY_PATH
 from sf_combo_finder.tui_themes import PALETTES, load_theme
 
@@ -23,6 +24,26 @@ if HAS_TEXTUAL:
 
 
 class BrowserSearchTests(unittest.TestCase):
+    def test_poison_marker_distinguishes_interactions_from_ordinary_normals(self):
+        for starting_poison in (False, True):
+            finder = ComboFinder('aki', opponent_poisoned=starting_poison)
+            self.assertEqual(combo_poison_notes(finder, {'moves': ['5mk', 'hundun']}), [])
+            self.assertEqual(combo_poison_notes(finder, {'moves': ['nightshade_pulse']}), [])
+            notes = combo_poison_notes(finder, {'moves': ['2lp', 'heavy_serpent_lash']})
+            self.assertEqual(len(notes), 1)
+            self.assertIn('Heavy Serpent Lash', notes[0])
+            self.assertIn('damage, hit state/advantage', notes[0])
+            self.assertIn('poison detonation', notes[0])
+            self.assertNotIn('requires', notes[0])
+
+    def test_poison_marker_reports_published_starting_requirement(self):
+        finder = ComboFinder('aki')
+        notes = combo_poison_notes(finder, {'moves': ['5mp'],
+                                           'conditions': {'opponent_poisoned': True}})
+        self.assertEqual(notes, ['This published route requires the opponent to start poisoned.'])
+        self.assertEqual(combo_poison_notes(ComboFinder('ryu'),
+                                          {'moves': ['5mp'], 'conditions': {'opponent_poisoned': True}}), [])
+
     def test_all_results_match_existing_engine(self):
         settings = SearchSettings(character='aki', sample_size=None, documented_only=True, max_length=8)
         result = search_combos(settings)
@@ -136,6 +157,78 @@ class BrowserSearchTests(unittest.TestCase):
 
 @unittest.skipUnless(HAS_TEXTUAL, 'Install requirements.txt to run Textual interaction tests')
 class BrowserInteractionTests(unittest.IsolatedAsyncioTestCase):
+    async def test_poison_badge_is_in_table_and_details_with_checkbox_on_or_off(self):
+        app = ComboFinderApp(settings=SearchSettings(character='aki'),
+                             preferences_path=None, library_path=None)
+        async with app.run_test(size=(140, 50)):
+            for starting_poison in (False, True):
+                finder = ComboFinder('aki', 2, 3, opponent_poisoned=starting_poison)
+                combos = {tuple(c['moves']): c for c in finder.iter_combos()}
+                app.rows = [(finder, combos[('5mk', 'hundun')]),
+                            (finder, combos[('2lp', 'heavy_serpent_lash')])]
+                await app.render_rows(app.generation)
+                table = app.query_one('#results', DataTable)
+                self.assertNotIn('[Poison]', table.get_row_at(0)[0].plain)
+                self.assertIn('[Poison]', table.get_row_at(1)[0].plain)
+                app.update_details(1)
+                details = str(app.query_one('#detail-text', Static).render())
+                self.assertIn('[Poison] Poison interaction', details)
+                self.assertIn('Heavy Serpent Lash: poison affects', details)
+                self.assertIn('[Poison]', str(app.query_one('#selection-meta', Static).render()))
+                app.update_details(0)
+                self.assertNotIn('[Poison]', str(app.query_one('#detail-text', Static).render()))
+
+    async def test_notes_panel_is_larger_and_resizes_to_fit_terminal(self):
+        app = ComboFinderApp(show_details=True, preferences_path=None, library_path=None)
+        async with app.run_test(size=(140, 70)) as pilot:
+            self.assertFalse(app.query('#browse'))
+            details = app.query_one('#details')
+            self.assertEqual(details.region.height, 40)
+            self.assertGreater(app.query_one('#results').size.height, 0)
+            for width, height in ((100, 40), (80, 24)):
+                await pilot.resize_terminal(width, height)
+                await pilot.pause()
+                self.assertGreaterEqual(details.region.height, 4)
+                self.assertLess(details.region.height, 40)
+                self.assertLessEqual(details.region.bottom, height - 1)
+                self.assertGreater(app.query_one('#results').size.height, 0)
+            app.action_details()
+            await pilot.pause()
+            self.assertFalse(details.display)
+
+    async def test_poison_control_only_applies_when_aki_is_selected(self):
+        app = ComboFinderApp(settings=SearchSettings(character='aki', opponent_poisoned=True),
+                             preferences_path=None, library_path=None)
+        with patch('sf_combo_finder.combo_tui.search_combos') as search:
+            async with app.run_test(size=(120, 40)) as pilot:
+                poisoned = app.query_one('#poisoned', Checkbox)
+                character = app.query_one('#character', Select)
+                self.assertTrue(poisoned.display)
+                self.assertTrue(app.read_settings().opponent_poisoned)
+                # Clearing a hidden checkbox must not trigger a search with
+                # the newly selected fighter before the user presses Search.
+                app.has_searched = True
+                for fighter in ('ryu', 'all'):
+                    character.value = fighter
+                    await pilot.pause()
+                    self.assertFalse(poisoned.display)
+                    self.assertFalse(poisoned.value)
+                    self.assertFalse(app.read_settings().opponent_poisoned)
+                character.value = 'aki'
+                await pilot.pause()
+                self.assertTrue(poisoned.display)
+                self.assertFalse(poisoned.value)
+                search.assert_not_called()
+                self.assertEqual(app.generation, 0)
+
+    async def test_non_aki_launch_clears_hidden_poison_filter(self):
+        app = ComboFinderApp(settings=SearchSettings(character='ryu', opponent_poisoned=True),
+                             preferences_path=None, library_path=None)
+        async with app.run_test(size=(120, 40)):
+            self.assertFalse(app.settings.opponent_poisoned)
+            self.assertFalse(app.query_one('#poisoned', Checkbox).display)
+            self.assertFalse(app.read_settings().opponent_poisoned)
+
     async def test_details_show_vertical_frames_and_milliseconds(self):
         finder = ComboFinder('aki', 3, 3, no_jumping=True)
         combo = next(c for c in finder.iter_combos() if c['moves'] == ['5mk', 'hundun'])

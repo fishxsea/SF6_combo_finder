@@ -71,6 +71,8 @@ The panel scrolls to reveal additional filters; hover controls for descriptions.
 After the first search, route-option checkboxes and **Opponent poisoned**
 automatically refresh the results when toggled. Before that, changes wait for
 **Search**. Other search fields apply when you press **Search**.
+**Opponent poisoned** appears only when A.K.I. is selected; selecting another
+fighter or All characters clears that setting.
 **Ctrl+B** or **Filters** toggles the panel. In terminals narrower than 110
 columns, it starts hidden and closes when searching to make room for results.
 **Shuffle** searches again with a new sample, defaulting to 25 when the field is
@@ -78,6 +80,14 @@ blank. Shuffle becomes available after your first search.
 Results initially sort by difficulty across lengths and show the bracket on the
 left, followed by arrows and controller button colors. **SF notation** changes the
 display without rerunning the search.
+
+A.K.I. rows show a **[Poison]** badge beside their difficulty when a move has a
+poison-dependent damage, hit-state or timing variant, or a published route
+requires starting poisoned. The badge appears with the poison checkbox on or
+off. Details name the affected moves and explain any starting-poison requirement.
+Some routes apply poison during the combo, so the badge does not always mean
+you must start poisoned. Ordinary normal-only strings remain unmarked unless a
+published starting-poison condition applies to that route.
 
 Use **Sort by** above the results to choose **Character**, **Difficulty**,
 **Length**, **Raw damage** or **Startup**, with **Ascending** or **Descending** order.
@@ -134,7 +144,7 @@ target-combo input windows are not available and are not assigned precision scor
 The selected-combo panel below the table shows its notation, estimated
 difficulty, input count, raw damage, evidence type and Drive/Super usage bars.
 The session summary shows the active fighter, length range, meter budget and
-match counts. **Browse** returns keyboard focus to the results.
+match counts.
 
 Click **Themes** or press **Ctrl+T** to focus the **Color theme** selector.
 Themes apply immediately without rerunning the search. Your choice is saved in
@@ -180,7 +190,9 @@ python3 combo_finder.py --tui --controller playstation
 Use **Tab / Shift+Tab** to switch controls, arrows to select a result, and
 **Enter** on a result or **Ctrl+D** to show details. Details include costs,
 transitions, difficulty components, conditions, notes and source links. They
-are hidden initially; `-v` opens them at launch. The results table scrolls
+are hidden initially; `-v` opens them at launch. The Notes & sources panel now
+uses up to 40 lines, four times its former height, and shrinks in shorter
+terminals to leave room for the combo list. The results table scrolls
 horizontally for long combos and vertically for many results.
 
 **Ctrl+Y** copies the selected combo using the terminal's clipboard protocol

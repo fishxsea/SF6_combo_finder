@@ -20,7 +20,8 @@ from textual.worker import get_current_worker
 from .combo_finder import CONTROLLERS, DATA_PATH
 from .combo_frames import frame_details
 from .combo_library import ComboLibrary, LIBRARY_PATH
-from .tui_search import SearchResult, SearchSettings, search_combos, sort_combo_rows, combo_startup
+from .tui_search import (SearchResult, SearchSettings, search_combos, sort_combo_rows,
+                         combo_startup, combo_poison_notes)
 from .tui_themes import (DEFAULT_THEME, PALETTES, PREFERENCES_PATH, load_theme, save_theme,
                         load_controller, save_controller)
 
@@ -74,6 +75,9 @@ class HelpScreen(ModalScreen):
                 'Raw damage is before scaling and excludes poison damage over time. '
                 'Difficulty is an estimate. Published recipes retain starting conditions '
                 'and source links; timing candidates still require spacing checks.\n\n'
+                '[Poison] in an A.K.I. table row marks a poison interaction or a published '
+                'starting-poison requirement. Details explain the affected moves; a badge '
+                'does not always require starting poisoned.\n\n'
                 'Grounded/midscreen/normal/unpoisoned are the default starting conditions. '
                 'Choose Corner, Poisoned or Counter to find routes for those situations. '
                 'Documented only excludes automatically generated timing candidates. '
@@ -176,7 +180,7 @@ class ComboFinderApp(App):
     .pair Vertical { width: 1fr; height: auto; margin-right: 1; }
     #overview-panel { height: 8; margin-top: 1; padding: 0 1; border: round $cf-border; border-title-color: $cf-muted; }
     #overview { height: auto; }
-    #details { height: 10; max-height: 35%; margin-top: 1; padding: 0 1; border: round $cf-border; border-title-color: $cf-muted; }
+    #details { height: 40; margin-top: 1; padding: 0 1; border: round $cf-border; border-title-color: $cf-muted; }
     #detail-text { height: auto; }
     Screen.compact #selection-panel { height: 9; }
     Screen.compact #selected-combo { max-height: 2; margin-bottom: 0; }
@@ -215,7 +219,9 @@ class ComboFinderApp(App):
         self.data_path = Path(data_path)
         initial_settings = settings or SearchSettings()
         self.settings = replace(initial_settings, character=initial_settings.character.lower(),
-                                sample_size=None, opponent_state='grounded')
+                                sample_size=None, opponent_state='grounded',
+                                opponent_poisoned=(initial_settings.opponent_poisoned
+                                                   and initial_settings.character.lower() == 'aki'))
         with self.data_path.open(encoding='utf-8') as source:
             self.characters = json.load(source)['characters']
         if not self.characters:
@@ -237,7 +243,6 @@ class ComboFinderApp(App):
         with Horizontal(id='navigation'):
             brand = self.brand_text()
             yield Static(brand, id='brand')
-            yield Button('Browse', id='browse', classes='nav-active')
             yield Button('Filters', id='toggle-filters')
             yield Button('Details', id='toggle-details')
             yield Button('Themes', id='toggle-theme')
@@ -354,6 +359,8 @@ class ComboFinderApp(App):
             self.query_one(f'#{widget_id}').border_title = title
         self.query_one('#details').display = self.show_details
         self.query_one('#toggle-details', Button).set_class(self.show_details, 'nav-active')
+        self.resize_details(self.size.height)
+        self.update_poison_control(self.settings.character)
         self.set_filters_visible(self.size.width >= 110)
         table = self.query_one('#results', DataTable)
         table.add_columns('Difficulty / len / raw dmg', 'Combo', 'Fighter', 'Position', 'Source', 'Startup')
@@ -407,6 +414,25 @@ class ComboFinderApp(App):
     def on_resize(self, event: Resize) -> None:
         if self.screen_stack:
             self.screen_stack[0].set_class(event.size.height < 32, 'compact')
+        self.resize_details(event.size.height)
+
+    def resize_details(self, terminal_height: int) -> None:
+        # Reserve room for navigation, the selected combo and the results.
+        reserved = 26 if terminal_height < 32 else 28
+        for details in self.query('#details'):
+            details.styles.height = min(40, max(4, terminal_height - reserved))
+
+    def update_poison_control(self, character: str) -> None:
+        poisoned = self.query_one('#poisoned', Checkbox)
+        poisoned.display = character == 'aki'
+        if character != 'aki':
+            # Changing fighters applies on Search, like the other Select fields.
+            with poisoned.prevent(Checkbox.Changed):
+                poisoned.value = False
+
+    @on(Select.Changed, '#character')
+    def character_changed(self, event: Select.Changed) -> None:
+        self.update_poison_control(str(event.value))
 
     def set_filters_visible(self, visible: bool) -> None:
         self.query_one('#sidebar').display = visible
@@ -464,7 +490,8 @@ class ComboFinderApp(App):
             drive_meter=number('drive-meter', 'Drive bars'), super_meter=number('super-meter', 'Super bars'),
             max_difficulty=None if difficulty == 'any' else difficulty,
             no_specials=checked('no-specials'), no_jumping=checked('no-jumping'),
-            opponent_poisoned=checked('poisoned'), documented_only=checked('documented'),
+            opponent_poisoned=(selected('character') == 'aki' and checked('poisoned')),
+            documented_only=checked('documented'),
             optimistic_links=checked('optimistic'), explore_light_chains=checked('explore'),
             starred_only=checked('starred-only'), show_hidden=checked('show-hidden'),
             hidden_only=checked('hidden-only'),
@@ -604,6 +631,8 @@ class ComboFinderApp(App):
             raw_damage = combo['damage']['raw_total']
             source = combo['evidence'].get('source_label')
             bracket = Text(f"[{difficulty} | len={combo['length']} | raw dmg={raw_damage if raw_damage is not None else 'unknown'}]", style=style)
+            if combo_poison_notes(finder, combo):
+                bracket.append(' [Poison]', style=f'bold {self.palette_colors()["cf-secondary"]}')
             starred, hidden = self.library.marks(combo)
             if starred:
                 bracket.append(' ★', style=self.palette_colors()['cf-primary'])
@@ -675,6 +704,9 @@ class ComboFinderApp(App):
         meta = Text(f"{combo['difficulty']['label'].upper()} · {combo['length']} inputs · "
                     f"raw damage {damage_label} · startup {startup_label}", style=colors['cf-primary'])
         meta.append(f'\n{position} · {kind}', style=colors['cf-muted'])
+        poison_notes = combo_poison_notes(finder, combo)
+        if poison_notes:
+            meta.append(' · [Poison]', style=colors['cf-secondary'])
         starred, hidden = self.library.marks(combo)
         if starred:
             meta.append(' · ★ Starred', style=colors['cf-primary'])
@@ -696,6 +728,11 @@ class ComboFinderApp(App):
         meter.append('░' * max(0, self.settings.super_meter - super_spent), style=colors['cf-border'])
         meter.append(f' {super_spent}/{self.settings.super_meter}', style=colors['cf-muted'])
         self.query_one('#selection-meter', Static).update(meter)
+        if poison_notes:
+            text.append('[Poison] Poison interaction\n', style=f'bold {colors["cf-secondary"]}')
+            for note in poison_notes:
+                text.append(note + '\n')
+            text.append('\n')
         text.append_text(frame_details(finder, combo, mapped=mapped, controller=self.controller))
         text.append(f'\nOpening attack startup: {startup_label} (movement, jump travel and charge preparation excluded).\n')
         if combo['evidence']['kind'] == 'published_recipe':
@@ -779,10 +816,6 @@ class ComboFinderApp(App):
             self.query_one('#character', Select).focus()
         else:
             self.query_one('#results', DataTable).focus()
-
-    @on(Button.Pressed, '#browse')
-    def focus_results(self) -> None:
-        self.query_one('#results', DataTable).focus()
 
     def action_copy_combo(self) -> None:
         index = self.query_one('#results', DataTable).cursor_row

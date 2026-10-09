@@ -56,6 +56,40 @@ def combo_startup(finder, combo):
     return None
 
 
+def combo_poison_notes(finder, combo):
+    """Describe A.K.I.'s poison interactions, even with the checkbox off.
+
+    A marker means a move has a poison variant, not that the opponent must
+    already be poisoned before the whole combo. A prior hit can apply poison.
+    Published starting-poison requirements are reported separately.
+    """
+    if finder.character != 'aki':
+        return []
+    notes = []
+    if combo.get('conditions', {}).get('opponent_poisoned'):
+        notes.append('This published route requires the opponent to start poisoned.')
+    fields = {'damage': 'damage', 'hit': 'hit state/advantage', 'cancel': 'cancel options',
+              'startup': 'startup', 'active_frames': 'active frames',
+              'recovery_on_hit': 'recovery', 'detonates_poison': 'poison detonation'}
+    seen, hit_started = set(), False
+    for key in combo['moves']:
+        move = finder.moves[key]
+        attacks = bool(move.get('damage')) or move.get('damage_unknown', False)
+        starter = attacks and not hit_started
+        hit_started = hit_started or attacks
+        if key in seen or not move.get('conditions', {}).get('opponent_poisoned'):
+            continue
+        seen.add(key)
+        normal, _ = finder._resolve(move, False, starter)
+        poisoned, _ = finder._resolve(move, True, starter)
+        changes = [label for field, label in fields.items()
+                   if normal.get(field) != poisoned.get(field)]
+        if changes:
+            notes.append(f'{move["name"]}: poison affects {", ".join(changes)} '
+                         'when the opponent is poisoned at this hit.')
+    return notes
+
+
 def sort_combo_rows(rows, sort_by: str = 'difficulty', *, descending: bool = False):
     """Sort an existing result pool without repeating or resampling a search."""
     if sort_by not in ('character', 'difficulty', 'length', 'damage', 'startup'):
