@@ -125,6 +125,9 @@ class CustomComboInteractionTests(unittest.IsolatedAsyncioTestCase):
                               custom_combos_path=path, **kwargs)
 
     async def click(self, app, pilot, selector):
+        # Editing a combo animates a scroll to its name. Let that finish before
+        # scrolling to the next target so it cannot move during the click.
+        await pilot.wait_for_scheduled_animations()
         app.screen.query_one(selector).scroll_visible(animate=False)
         await pilot.pause()
         self.assertTrue(await pilot.click(selector))
