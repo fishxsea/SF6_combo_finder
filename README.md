@@ -45,7 +45,8 @@ To launch again, repeat only the last command for your platform.
 1. Open **Filters** and choose a fighter, input-length range, difficulty and meter.
    Set the opening hit and screen position as needed. **Any position** includes
    both midscreen and corner recipes.
-2. Press **Search**. Start with short routes; longer searches take more time.
+2. Press **Search** at the top of Filters or in the combo panel. Start with short
+   routes; longer searches take more time.
 3. Select a row and press **Enter**, or click **Details**, to see the vertical
    move sequence, frame timings, input windows in milliseconds, and source notes.
 4. Set **Random count** and press **Shuffle** for another sample from cached matches.
@@ -53,10 +54,44 @@ To launch again, repeat only the last command for your platform.
 5. **Star** saves a favorite. **Hide** removes a route from normal results.
    Use **Starred only**, **Show hidden**, or **Hidden only** to review saved routes.
 
+**Min length**, **Max length**, and **Random count** have sliders alongside their
+number fields. Click or drag a slider, use arrow keys for single steps, or Home/End
+for its endpoints. The random-count slider's left end selects **All** (a blank
+field). Type exact values as before; larger values extend the slider range.
+Length sliders keep the minimum and maximum in order. Press **Search** to apply
+the new values, or **Shuffle** to apply a new random count to cached matches.
+
 **Columns** lets you choose what the table shows. The defaults are **Diff / len / dmg**,
 **Combo**, **Fighter**, **Source**, and **Startup**. Your layout is saved.
 
-Route-option checkboxes reuse cached results after the first search. Changing the
+Under **My Combos**, open **Build / edit combos** to create your own routes.
+Click directions, complete motion sequences (such as ↓ ↘ →), and attack buttons;
+use **Next move** to append each input. The buttons and live output follow your
+Xbox, PlayStation, or SF notation selection. **Save combo** includes the current
+input and saves the canonical SF string in your personal `custom_combos.json`.
+You can name, edit, copy, or delete saved routes in the builder.
+Use **Notes / explanation** to add setup requirements, timing tips, or a description
+of what the combo is for. Enter adds a new line. Notes are saved with the combo,
+can be edited later, and appear in its details panel.
+
+Select a table result and click **Extend combo** to start with its inputs, or
+choose a displayed route from the builder's starting-combo list. Append your
+own inputs and save a custom route. **Include custom combos** includes saved routes
+in the main table, labeled **Custom combo**, alongside the search results.
+Saving enables this option. Fighter, length, jumping/special exclusions, and
+starred/hidden filters apply; random sampling includes the combined pool.
+Select **Custom combos only** to show just your saved routes of any length, even
+when **Include custom combos** is off. This ignores the minimum and maximum length
+limits; fighter, jumping/special exclusions, starred/hidden filters, and random
+sampling still apply.
+Custom routes have no measured damage, meter, timing, or difficulty, so difficulty
+and meter limits apply to the built-in routes. **Documented only** controls the
+built-in routes; **Include custom combos** can include your own routes alongside them.
+
+**Optimistic links** and **Explore light chains** are searched only when
+checked before pressing **Search**. Changing these options waits for Search;
+Shuffle keeps the options from the last search. Other route-option checkboxes
+reuse cached results after the first search. Changing the
 fighter, length, meter or starting conditions can require a new search.
 **Documented only** searches prepare published routes without generating combos.
 Turning it off loads generated candidates; turning it back on reuses those results.

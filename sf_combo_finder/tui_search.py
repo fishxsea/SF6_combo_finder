@@ -1,5 +1,4 @@
 """Search state shared by the Textual UI and dependency-free tests."""
-from copy import copy
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 import json
@@ -32,6 +31,8 @@ class SearchSettings:
     show_hidden: bool = False
     hidden_only: bool = False
     starred_only: bool = False
+    show_custom: bool = False
+    custom_only: bool = False
 
 
 @dataclass
@@ -44,20 +45,22 @@ class SearchResult:
 
 @dataclass
 class CachedRoutePool:
-    """Prepared timing modes share move data and route metadata."""
+    """Cached routes for the timing options selected when Search was pressed."""
     modes: dict[tuple[bool, bool], list[tuple[ComboFinder, dict]]] = field(default_factory=dict)
 
 
 def route_pool_settings(settings):
-    """Keep published-only searches bounded; broaden inexpensive route filters."""
+    """Preserve generation options while broadening inexpensive display filters."""
     return replace(settings, sample_size=None, max_difficulty=None,
                    no_specials=False, no_jumping=False,
-                   optimistic_links=True, explore_light_chains=True,
-                   starred_only=False, show_hidden=True, hidden_only=False)
+                   starred_only=False, show_hidden=True, hidden_only=False,
+                   show_custom=False, custom_only=False)
 
 
 def filter_route_pool(pool, settings, library):
     """Filter a prepared pool without enumerating routes or rereading data."""
+    if settings.custom_only:
+        return []
     if not library.entries and (settings.starred_only or settings.hidden_only):
         return []
     rows = []
@@ -85,56 +88,13 @@ def filter_route_pool(pool, settings, library):
 
 def search_route_pool(settings, data_path=DATA_PATH, *, cancelled=lambda: False,
                       progress=lambda count: None, library=None):
-    """Enumerate permissive routes once, then prepare both timing/light modes."""
+    """Enumerate only the selected timing/light mode for later filtering."""
     result = search_combos(route_pool_settings(settings), data_path, cancelled=cancelled,
                            progress=progress, library=library)
     if result.cancelled:
         return result
-    pool = CachedRoutePool()
-    for optimistic in (False, True):
-        for explore in (False, True):
-            if optimistic and explore:
-                pool.modes[(optimistic, explore)] = result.rows
-                continue
-            finders, rows = {}, []
-            for original, combo in result.rows:
-                if cancelled():
-                    return SearchResult(cancelled=True)
-                if original.character not in finders:
-                    finder = copy(original)
-                    finder.optimistic_links, finder.explore_light_chains = optimistic, explore
-                    finders[original.character] = finder
-                finder = finders[original.character]
-                published = combo['evidence']['kind'] == 'published_recipe'
-                notes = combo['notes']
-                if not published:
-                    if not explore and any(not finder._light_sequence_supported(combo['moves'][:end])
-                                           for end in range(1, len(combo['moves']) + 1)):
-                        continue
-                    notes = [note for note in notes if not note.startswith(('Variable hit advantage:', 'Exploration:'))]
-                    if explore:
-                        notes.append('Exploration: unrestricted light strings; accumulated pushback is unchecked')
-                    previous, poisoned, valid = None, finder.opponent_poisoned, True
-                    for step, key in enumerate(combo['moves']):
-                        move = finder.moves[key]
-                        if previous is not None:
-                            transition = finder._transition(combo['moves'][step - 1], previous, key, move)
-                            if transition is None:
-                                valid = False
-                                break
-                            if transition[1]:
-                                notes.append(transition[1])
-                        previous, poisoned = finder._resolve(move, poisoned, step == 0)
-                    if not valid:
-                        continue
-                prepared = dict(combo)
-                prepared['notes'] = list(dict.fromkeys(notes))
-                prepared['difficulty'] = finder.estimate_difficulty(prepared)
-                rows.append((finder, prepared))
-            pool.modes[(optimistic, explore)] = rows
-    if cancelled():
-        return SearchResult(cancelled=True)
-    result.route_pool = pool
+    mode = (settings.optimistic_links, settings.explore_light_chains)
+    result.route_pool = CachedRoutePool(modes={mode: result.rows})
     return result
 
 
@@ -247,7 +207,8 @@ def sort_combo_rows(rows, sort_by: str = 'difficulty', *, descending: bool = Fal
     known, unknown = [], []
     for row in rows:
         missing = ((sort_by == 'damage' and row[1]['damage']['raw_total'] is None) or
-                   (sort_by == 'startup' and combo_startup(*row) is None))
+                   (sort_by == 'startup' and combo_startup(*row) is None) or
+                   (sort_by == 'difficulty' and row[1].get('evidence', {}).get('kind') == 'custom'))
         (unknown if missing else known).append(row)
     return sorted(known, key=key, reverse=descending) + unknown
 

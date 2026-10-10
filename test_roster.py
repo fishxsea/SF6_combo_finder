@@ -43,6 +43,33 @@ class RosterTests(unittest.TestCase):
             self.assertEqual(data['characters']['aki'], self.data['characters']['aki'])
             self.assertEqual(data, self.data)
 
+    def test_aki_is_rebuilt_from_its_character_file(self):
+        snapshot = json.loads((SOURCE_DIR / 'aki.json').read_text(encoding='utf-8'))
+        self.assertEqual(snapshot['id'], 'aki')
+        self.assertEqual({key: value for key, value in snapshot.items() if key != 'id'},
+                         self.data['characters']['aki'])
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / 'characters.json'
+            data = deepcopy(self.data)
+            del data['characters']['aki']
+            path.write_text(json.dumps(data), encoding='utf-8')
+            rebuilt = import_roster(data_path=path)
+            self.assertEqual(rebuilt, self.data)
+
+    def test_aki_character_file_edits_are_imported(self):
+        snapshot = json.loads((SOURCE_DIR / 'aki.json').read_text(encoding='utf-8'))
+        snapshot['moves']['2lp'].setdefault('notes', []).append('Reviewed source-file edit.')
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            path = directory / 'characters.json'
+            path.write_text(json.dumps(self.data), encoding='utf-8')
+            sources = directory / 'sources'
+            sources.mkdir()
+            (sources / 'aki.json').write_text(json.dumps(snapshot), encoding='utf-8')
+            (sources / 'sa-levels.json').write_text(json.dumps(self.levels), encoding='utf-8')
+            rebuilt = import_roster(source_dir=sources, data_path=path)
+            self.assertIn('Reviewed source-file edit.', rebuilt['characters']['aki']['moves']['2lp']['notes'])
+
     def test_charge_air_variants_and_command_grabs_are_excluded(self):
         for key in self.levels:
             if key == 'aki':

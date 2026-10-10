@@ -1,7 +1,7 @@
 # Imported frame-data attribution
 
 The imported character records in `characters.json` identified by
-`data_source.provider`, and the snapshots in `data/sf6-sensei/`, are offered
+`data_source.provider`, and the upstream snapshots in `data/sf6-sensei/`, are offered
 under **Creative Commons Attribution-ShareAlike 4.0 International**:
 https://creativecommons.org/licenses/by-sa/4.0/
 
@@ -39,8 +39,10 @@ the upstream mapping of inputs to Super Art levels.
   state-dependent routes from automatic generation.
 - Leaves imported special continuations unknown instead of extrapolating juggles.
 
-Derived imported records remain under CC-BY-SA-4.0. The pre-existing A.K.I.
-records are preserved separately and are not imported from these snapshots.
+Derived imported records remain under CC-BY-SA-4.0. `data/sf6-sensei/aki.json`
+contains the pre-existing reviewed A.K.I. records extracted from the app database,
+with their existing sources. It uses the app schema and is not an SF6 Sensei
+snapshot. The importer loads those records directly rather than converting them.
 This notice concerns the imported data; no SF6 Sensei source code was copied.
 
 `import_documented.py` makes recipe-local copies of imported records for target

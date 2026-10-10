@@ -28,6 +28,10 @@ from .tui_search import (SearchResult, SearchSettings, search_route_pool, route_
 from .tui_themes import (DEFAULT_THEME, PALETTES, PREFERENCES_PATH, load_theme, save_theme,
                         load_controller, save_controller)
 from .tui_columns import COLUMNS, DEFAULT_COLUMNS, load_columns, save_columns
+from .tui_slider import IntegerSlider
+from .custom_combos import CustomCombos
+from .app_paths import CUSTOM_COMBOS_PATH
+from .tui_custom_combos import CustomCombosScreen
 
 
 class SearchProgress(Message):
@@ -65,9 +69,14 @@ class HelpScreen(ModalScreen):
             yield Static(
                 'Change filters, then press Search or Ctrl+R. Enter in a numeric field also searches. '
                 'The browser waits for Search before finding combos. Random count starts blank '
-                'to show all matches. Set a count to sample results; Shuffle chooses a new '
-                'sample from the cached search pool. Route checkboxes filter cached routes, '
-                'including both optimistic-link and light-chain modes. Character, length, '
+                'to show all matches. '
+                'Use the length and random-count sliders or type exact values. Click or drag '
+                'a slider; arrow keys adjust one step and Home/End select its endpoints. '
+                'The left end of Random count selects All. Slider changes wait for Search or Shuffle. '
+                'Set a count to sample results; Shuffle chooses a new '
+                'sample from the cached search pool. Optimistic links and unrestricted light '
+                'chains apply only when selected before pressing Search; changing these '
+                'checkboxes waits for Search. Other route checkboxes filter cached routes. Character, length, '
                 'meter and starting-condition changes load another pool. '
                 'Documented-only searches prepare published routes; turning that option off '
                 'loads generated candidates when needed. '
@@ -111,6 +120,20 @@ class HelpScreen(ModalScreen):
                 'routes from timing candidates. '
                 'Documented only excludes automatically generated timing candidates. '
                 'Optimistic links and unrestricted light chains are exploration options.\n\n'
+                'MY COMBOS → Build / edit combos: click directions, full motions and attack '
+                'buttons to build a saved route. Next move extends the input string; Save '
+                'includes the current input. The builder follows Xbox, PlayStation or SF '
+                'notation. Add notes or an explanation for each route; Enter adds a new line '
+                'in Notes, and saved notes appear in the combo details panel. '
+                'Extend combo loads the selected result, and the builder can '
+                'also load a displayed route as a starting point. Include custom combos '
+                'includes saved routes in the table with a Custom combo source label. '
+                'Custom combos only shows your saved routes of any length on their own, even when '
+                'Include custom combos is off. '
+                'Custom routes have no measured difficulty, damage, meter or frame timing. '
+                'Your fighter, jumping/special exclusions and personal marks still '
+                'filter them. Length limits apply when including custom combos in search results. '
+                'Random sampling includes the displayed pool.\n\n'
                 'Star saves a favorite; Hide excludes a combo from future searches. '
                 'Show hidden includes excluded combos; Hidden only lets you review and restore them. '
                 'Starred only shows favorites matching your other search filters. These filters combine. '
@@ -235,10 +258,16 @@ class ComboFinderApp(App):
     #selection-meter { height: 1; }
     #sidebar { width: 38; margin-left: 1; }
     #filters { height: 1fr; padding: 0 1; border: round $cf-border; border-title-color: $cf-muted; }
+    #filter-search { width: 100%; margin-top: 1; }
     #filters Label { height: 1; margin-top: 1; color: $cf-muted; }
     #filters .section { margin-top: 1; color: $cf-primary; text-style: bold; }
     #filters Input { width: 100%; height: 1; padding: 0 1; border: none; background: $cf-surface; color: $cf-foreground; }
     #filters Input:focus { background: $cf-focus; color: $cf-primary; }
+    #filters IntegerSlider:focus { background: $cf-focus; }
+    #filters IntegerSlider > .slider--filled { color: $cf-secondary; }
+    #filters IntegerSlider > .slider--track { color: $cf-border; }
+    #filters IntegerSlider > .slider--thumb { color: $cf-primary; }
+    #filters IntegerSlider:focus > .slider--thumb { color: $cf-secondary; }
     #filters Select { width: 100%; height: 1; border: none; padding: 0; }
     SelectCurrent { height: 1; padding: 0 1; border: none; background: $cf-surface; color: $cf-foreground; }
     Select:focus SelectCurrent { background: $cf-focus; color: $cf-primary; }
@@ -269,7 +298,8 @@ class ComboFinderApp(App):
     def __init__(self, data_path: Path = DATA_PATH, settings: SearchSettings | None = None,
                  *, mapped: bool = True, show_details: bool = False,
                  preferences_path: Path | None = PREFERENCES_PATH,
-                 library_path: Path | None = LIBRARY_PATH, controller: str | None = None):
+                 library_path: Path | None = LIBRARY_PATH, controller: str | None = None,
+                 custom_combos_path: Path | None = CUSTOM_COMBOS_PATH):
         super().__init__()
         self.preferences_path = preferences_path
         self.visible_columns = load_columns(preferences_path)
@@ -277,6 +307,7 @@ class ComboFinderApp(App):
         if self.controller not in CONTROLLERS:
             raise ValueError(f'Unknown controller: {self.controller}')
         self.library = ComboLibrary(library_path)
+        self.custom_combos = CustomCombos(custom_combos_path)
         self.palette_name = load_theme(preferences_path)
         for name, palette in PALETTES.items():
             variables = palette.variables()
@@ -299,7 +330,8 @@ class ComboFinderApp(App):
                                 opponent_poisoned=(initial_settings.opponent_poisoned
                                                    and initial_settings.character.lower() == 'aki'))
         with self.data_path.open(encoding='utf-8') as source:
-            self.characters = json.load(source)['characters']
+            self.combo_data = json.load(source)
+            self.characters = self.combo_data['characters']
         if not self.characters:
             raise ValueError('The data file contains no characters')
         if self.settings.character.lower() not in ('all', *self.characters):
@@ -353,6 +385,8 @@ class ComboFinderApp(App):
                     yield Static('Choose filters, then press Search (Ctrl+R).', id='status', markup=False)
                 with Vertical(id='selection-panel'):
                     with Horizontal(id='combo-actions'):
+                        yield Button('Extend combo', id='extend-combo', disabled=True,
+                                     tooltip='Load this route into the clickable builder and save an extended custom combo.')
                         yield Button('☆ Star', id='star-combo', disabled=True,
                                      tooltip='Star/unstar this exact combo; saved across restarts (Ctrl+S).')
                         yield Button('Hide', id='hide-combo', disabled=True,
@@ -364,6 +398,8 @@ class ComboFinderApp(App):
                     yield Static('Select a combo to inspect it.', id='detail-text', markup=False)
             with Vertical(id='sidebar'):
                 with VerticalScroll(id='filters'):
+                    yield Button('Search', variant='primary', id='filter-search',
+                                 tooltip='Search using the selected filters (Ctrl+R).')
                     yield Label('SEARCH FILTERS', classes='section')
                     yield Label('Character')
                     options = [('All characters', 'all')] + [
@@ -374,13 +410,21 @@ class ComboFinderApp(App):
                             yield Label('Min length')
                             yield Input(str(s.min_length), type='integer', id='min-length',
                                         tooltip='Minimum input count, including movement and target-combo inputs.')
+                            yield IntegerSlider(1, max(20, s.min_length), s.min_length,
+                                                id='min-length-slider',
+                                                tooltip='Minimum length: click, drag or use arrow keys. Type above for exact values.')
                         with Vertical():
                             yield Label('Max length')
                             yield Input(str(s.max_length), type='integer', id='max-length',
                                         tooltip='Maximum input count. Larger searches take longer.')
+                            yield IntegerSlider(1, max(20, s.max_length), s.max_length,
+                                                id='max-length-slider',
+                                                tooltip='Maximum length: click, drag or use arrow keys. Larger searches take longer.')
                     yield Label('Random count · blank = all')
                     yield Input('', type='integer', id='random-count',
                                 tooltip='Sample this many matches without replacement after filtering. Blank shows all.')
+                    yield IntegerSlider(0, 100, 0, id='random-count-slider',
+                                        tooltip='Random count: left end = All; otherwise 1–100. Type a larger count to extend the range.')
                     yield Label('Maximum difficulty')
                     yield Select([('Any difficulty', 'any'), ('Easy', 'easy'), ('Medium', 'medium'), ('Hard', 'hard')],
                                  value=s.max_difficulty or 'any', allow_blank=False, id='difficulty',
@@ -418,10 +462,16 @@ class ComboFinderApp(App):
                     yield Checkbox('Exclude jumping', s.no_jumping, id='no-jumping', tooltip='Exclude all jump attacks and jump-in starters.')
                     yield Checkbox('Exclude specials', s.no_specials, id='no-specials', tooltip='Exclude specials and supers.')
                     yield Checkbox('Optimistic links', s.optimistic_links, id='optimistic',
-                                   tooltip='Use maximum variable advantage; favorable contact timing is required.')
+                                   tooltip='Use maximum variable advantage; favorable contact timing is required. Press Search to apply.')
                     yield Checkbox('Explore light chains', s.explore_light_chains, id='explore',
-                                   tooltip='Bypass the conservative light-string filter; unchecked pushback may make strings impossible.')
+                                   tooltip='Bypass the conservative light-string filter; unchecked pushback may make strings impossible. Press Search to apply.')
                     yield Label('MY COMBOS', classes='section')
+                    yield Button('Build / edit combos', id='custom-combos',
+                                 tooltip='Create personal combos by clicking direction, motion and attack buttons.')
+                    yield Checkbox('Include custom combos', s.show_custom, id='show-custom',
+                                   tooltip='Include your saved routes matching fighter, length and exclusion filters. Custom routes have no measured difficulty, damage or meter data.')
+                    yield Checkbox('Custom combos only', s.custom_only, id='custom-only',
+                                   tooltip='Show only your saved routes of any length, even when Include custom combos is off. Fighter, exclusions and personal marks still apply.')
                     yield Checkbox('Starred only', s.starred_only, id='starred-only',
                                    tooltip='Only saved favorites matching the other filters. Hidden favorites remain excluded unless revealed.')
                     yield Checkbox('Show hidden', s.show_hidden, id='show-hidden',
@@ -498,6 +548,8 @@ class ComboFinderApp(App):
 
     @on(Button.Pressed, '#toggle-theme')
     def action_theme_picker(self) -> None:
+        if isinstance(self.screen, CustomCombosScreen):
+            return
         self.set_filters_visible(True)
         selector = self.query_one('#color-theme', Select)
         selector.focus()
@@ -551,6 +603,7 @@ class ComboFinderApp(App):
         self.query_one('#selection-meta', Static).update('')
         self.query_one('#selection-meter', Static).update('')
         self.query_one('#selection-panel').border_subtitle = ''
+        self.query_one('#extend-combo', Button).disabled = True
         self.query_one('#star-combo', Button).disabled = True
         self.query_one('#hide-combo', Button).disabled = True
 
@@ -561,7 +614,7 @@ class ComboFinderApp(App):
         mode = 'All matches' if settings.sample_size is None else f'Random {settings.sample_size}'
         rows = [('Fighter', scope), ('Inputs', f'{settings.min_length}–{settings.max_length} · {mode}'),
                 ('Meter', f'{settings.drive_meter} Drive · {settings.super_meter} Super'),
-                ('Found' if self.searching else 'Matches', count), ('Shown', str(len(self.rows)))]
+                ('Prepared' if self.searching else 'Matches', count), ('Shown', str(len(self.rows)))]
         colors = self.palette_colors()
         text = Text(' Search    Value'.ljust(32),
                     style=f"bold {colors['cf-secondary']} on {colors['cf-header']}")
@@ -570,6 +623,46 @@ class ComboFinderApp(App):
             background = colors['cf-surface'] if index % 2 == 0 else colors['cf-background']
             text.append(f' {label:<9}{value}'.ljust(32), style=f"{colors['cf-foreground']} on {background}")
         self.query_one('#overview', Static).update(text)
+
+    def sync_numeric_slider(self, field_id: str) -> None:
+        field = self.query_one(f'#{field_id}', Input)
+        slider = self.query_one(f'#{field_id}-slider', IntegerSlider)
+        raw = field.value.strip()
+        try:
+            value = 0 if field_id == 'random-count' and not raw else int(raw)
+        except ValueError:
+            return  # Keep incomplete edits available for normal search validation.
+        if value < slider.minimum or (field_id == 'random-count' and raw and value == 0):
+            return
+        slider.maximum = max(100 if field_id == 'random-count' else 20, value)
+        with slider.prevent(IntegerSlider.Changed):
+            slider.value = value
+        slider.refresh()
+
+    @on(Input.Changed, '#min-length')
+    @on(Input.Changed, '#max-length')
+    @on(Input.Changed, '#random-count')
+    def numeric_input_changed(self, event: Input.Changed) -> None:
+        self.sync_numeric_slider(event.input.id)
+
+    @on(IntegerSlider.Changed)
+    def numeric_slider_changed(self, event: IntegerSlider.Changed) -> None:
+        field_id = event.slider.id.removesuffix('-slider')
+        field = self.query_one(f'#{field_id}', Input)
+        with field.prevent(Input.Changed):
+            field.value = '' if field_id == 'random-count' and event.value == 0 else str(event.value)
+        if field_id in {'min-length', 'max-length'}:
+            other_id = 'max-length' if field_id == 'min-length' else 'min-length'
+            other = self.query_one(f'#{other_id}', Input)
+            try:
+                other_value = int(other.value)
+            except ValueError:
+                return
+            if ((field_id == 'min-length' and event.value > other_value) or
+                    (field_id == 'max-length' and event.value < other_value)):
+                with other.prevent(Input.Changed):
+                    other.value = str(event.value)
+                self.sync_numeric_slider(other_id)
 
     def read_settings(self) -> SearchSettings:
         def number(widget_id, label, optional=False):
@@ -602,17 +695,35 @@ class ComboFinderApp(App):
             optimistic_links=checked('optimistic'), explore_light_chains=checked('explore'),
             starred_only=checked('starred-only'), show_hidden=checked('show-hidden'),
             hidden_only=checked('hidden-only'),
+            show_custom=checked('show-custom'),
+            custom_only=checked('custom-only'),
         )
 
+    def active_route_settings(self) -> SearchSettings:
+        """Live filters and Shuffle keep the last explicitly searched timing mode."""
+        return replace(self.read_settings(), optimistic_links=self.settings.optimistic_links,
+                       explore_light_chains=self.settings.explore_light_chains)
+
+    @on(Button.Pressed, '#filter-search')
     @on(Button.Pressed, '#search')
     @on(Input.Submitted)
     async def action_search(self) -> None:
+        if isinstance(self.screen, CustomCombosScreen):
+            return
         try:
             settings = self.read_settings()
             if settings.sample_size is not None and settings.sample_size < 1:
                 raise ValueError('Random count must be positive, or blank for all results')
         except ValueError as error:
             self.query_one('#status', Static).update(str(error))
+            return
+        if settings.custom_only:
+            if self.searching:
+                self.action_cancel_search()
+            if self.size.width < 110:
+                self.set_filters_visible(False)
+            await self.show_custom_without_search(settings=settings)
+            self.query_one('#results', DataTable).focus()
             return
         if not self.searching and (self.cached_pool_key(settings) in self.combo_pools or
                 (self.combo_pool is not None and
@@ -629,14 +740,25 @@ class ComboFinderApp(App):
     async def route_option_changed(self, event: Checkbox.Changed) -> None:
         if not self.route_controls_ready or event.checkbox.id not in {
                 'documented', 'no-jumping', 'no-specials', 'optimistic', 'explore', 'poisoned',
-                'starred-only', 'show-hidden', 'hidden-only'}:
+                'starred-only', 'show-hidden', 'hidden-only', 'show-custom', 'custom-only'}:
             return
         if not self.has_searched:
+            if event.checkbox.id in {'show-custom', 'custom-only'} or ((self.settings.show_custom
+                    or self.settings.custom_only)
+                    and event.checkbox.id not in {'optimistic', 'explore'}):
+                await self.show_custom_without_search()
+            return
+        if event.checkbox.id in {'optimistic', 'explore'}:
+            if not self.searching:
+                self.update_results_status()
             return
         # Ignore initial checkbox messages when the mounted values already
         # match the running search. SF notation has its own display handler.
         try:
-            settings = self.read_settings()
+            settings = self.active_route_settings()
+            if settings.custom_only and not self.searching:
+                await self.show_custom_without_search(settings=settings)
+                return
             if settings == self.settings:
                 if self.pending_poison_settings is not None and not self.searching:
                     self.query_one('#cancel', Button).disabled = True
@@ -658,7 +780,7 @@ class ComboFinderApp(App):
         except ValueError as error:
             self.query_one('#status', Static).update(str(error))
             return
-        self.start_combo_search(close_filters=False)
+        self.start_combo_search(close_filters=False, settings=settings)
 
     @staticmethod
     def poison_pool_key(settings: SearchSettings) -> SearchSettings:
@@ -691,6 +813,9 @@ class ComboFinderApp(App):
         self.poison_cache_worker = self.warm_poison_cache(key, self.cache_generation)
 
     async def switch_poison_pool(self, settings: SearchSettings, *, shuffle=False) -> None:
+        if settings.custom_only:
+            await self.show_custom_without_search(settings=settings)
+            return
         key = self.cached_pool_key(settings)
         if key not in self.combo_pools:
             self.pending_poison_settings = settings
@@ -703,7 +828,7 @@ class ComboFinderApp(App):
         selected_index = self.query_one('#results', DataTable).cursor_row
         selected_key = (combo_row_key(self.rows[selected_index])
                         if 0 <= selected_index < len(self.rows) else None)
-        pool = filter_route_pool(self.combo_pools[key], settings, self.library)
+        pool = self.with_custom_rows(filter_route_pool(self.combo_pools[key], settings, self.library), settings)
         rows = (sample_combo_rows(pool, settings.sample_size) if shuffle else
                 retain_combo_rows(pool, index_combo_rows(pool), self.rows, settings.sample_size))
         self.pending_poison_settings = None
@@ -791,7 +916,7 @@ class ComboFinderApp(App):
         if message.generation == self.generation:
             self.match_count = message.count
             self.update_overview()
-            self.query_one('#status', Static).update(f'Searching… {message.count:,} matches found. Escape cancels.')
+            self.query_one('#status', Static).update(f'Searching… {message.count:,} candidate routes prepared. Escape cancels.')
 
     async def on_search_completed(self, message: SearchCompleted) -> None:
         if message.generation != self.generation:
@@ -817,7 +942,8 @@ class ComboFinderApp(App):
                 and route_pool_settings(self.pending_poison_settings) == self.pool_settings):
             self.settings = self.pending_poison_settings
             self.pending_poison_settings = None
-        self.combo_pool = filter_route_pool(message.result.route_pool, self.settings, self.library)
+        self.combo_pool = self.with_custom_rows(
+            filter_route_pool(message.result.route_pool, self.settings, self.library), self.settings)
         self.query_one('#shuffle', Button).disabled = False
         if self.settings.character == 'aki':
             # Prepare the alternate while the completed results are being drawn.
@@ -859,8 +985,11 @@ class ComboFinderApp(App):
 
     def update_results_status(self) -> None:
         mode = 'sampled' if self.settings.sample_size is not None else 'shown'
+        pending = (self.query_one('#optimistic', Checkbox).value != self.settings.optimistic_links
+                   or self.query_one('#explore', Checkbox).value != self.settings.explore_light_chains)
+        hint = ' · Link options changed; press Search to apply.' if pending else ''
         self.query_one('#status', Static).update(
-            f'{len(self.rows):,} {mode} / {self.match_count:,} matches · {self.sort_description()}')
+            f'{len(self.rows):,} {mode} / {self.match_count:,} matches · {self.sort_description()}{hint}')
 
     @on(Select.Changed, '#sort-by')
     @on(Select.Changed, '#sort-order')
@@ -889,7 +1018,7 @@ class ComboFinderApp(App):
             if generation != self.generation or render_generation != self.render_generation:
                 return
             difficulty = combo['difficulty']['label']
-            style = {'easy': 'green', 'medium': 'yellow', 'hard': 'red'}[difficulty]
+            style = {'easy': 'green', 'medium': 'yellow', 'hard': 'red'}.get(difficulty, self.palette_colors()['cf-secondary'])
             raw_damage = combo['damage']['raw_total']
             source = combo['evidence'].get('source_label')
             damage_label = f'{raw_damage:,}' if raw_damage is not None else 'unknown'
@@ -992,6 +1121,7 @@ class ComboFinderApp(App):
         notation = Text.from_ansi(finder.format_combo(combo, mapped=mapped, color=mapped,
                                                    controller=self.controller))
         self.query_one('#selected-combo', Static).update(notation)
+        self.query_one('#extend-combo', Button).disabled = False
         name = self.characters[finder.character].get('display_name', finder.character)
         self.query_one('#selection-panel').border_subtitle = f'{index + 1}/{len(self.rows)} · {name}'
         kind = combo['evidence'].get('source_label', 'Timing candidate')
@@ -1005,6 +1135,19 @@ class ComboFinderApp(App):
         meta = Text(f"{combo['difficulty']['label'].upper()} · {combo['length']} inputs · "
                     f"raw damage {damage_label} · startup {startup_label}", style=colors['cf-primary'])
         meta.append(f'\n{position} · {kind}', style=colors['cf-muted'])
+        if combo['evidence']['kind'] == 'custom':
+            self.query_one('#selection-meta', Static).update(meta)
+            self.query_one('#selection-meter', Static).update('Drive / Super: not recorded')
+            details = Text()
+            details.append(combo['custom_name'] + '\n\n', style='bold')
+            details.append_text(notation)
+            if combo.get('custom_description'):
+                details.append('\n\nNOTES / EXPLANATION\n', style='bold')
+                details.append(combo['custom_description'])
+            details.append('\n\nSaved custom combo. Frame timing, damage, meter and difficulty are not recorded.\n')
+            self.query_one('#detail-text', Static).update(details)
+            self.update_mark_buttons(combo)
+            return
         poison_notes = combo_poison_notes(finder, combo)
         text.append_text(frame_details(finder, combo, mapped=mapped, controller=self.controller))
         if poison_notes:
@@ -1014,12 +1157,7 @@ class ComboFinderApp(App):
             meta.append(' · ★ Starred', style=colors['cf-primary'])
         if hidden:
             meta.append(' · Hidden', style=colors['cf-muted'])
-        star_button = self.query_one('#star-combo', Button)
-        star_button.label = '★ Unstar' if starred else '☆ Star'
-        star_button.disabled = False
-        hide_button = self.query_one('#hide-combo', Button)
-        hide_button.label = 'Restore' if hidden else 'Hide'
-        hide_button.disabled = False
+        self.update_mark_buttons(combo)
         self.query_one('#selection-meta', Static).update(meta)
         meter = Text('Drive  ', style=colors['cf-muted'])
         drive, super_spent = combo['drive_spent'], combo['super_spent']
@@ -1060,12 +1198,80 @@ class ComboFinderApp(App):
         text.append('Raw damage is before scaling; poison damage over time is excluded.')
         self.query_one('#detail-text', Static).update(text)
 
+    def update_mark_buttons(self, combo):
+        starred, hidden = self.library.marks(combo)
+        star_button = self.query_one('#star-combo', Button)
+        star_button.label = '★ Unstar' if starred else '☆ Star'
+        star_button.disabled = False
+        hide_button = self.query_one('#hide-combo', Button)
+        hide_button.label = 'Restore' if hidden else 'Hide'
+        hide_button.disabled = False
+
+    def with_custom_rows(self, pool, settings):
+        return ([] if settings.custom_only else list(pool)) + self.custom_combos.rows(
+            self.combo_data, settings, self.library)
+
+    async def show_custom_without_search(self, *, settings=None):
+        try:
+            settings = settings if settings is not None else self.active_route_settings()
+            pool = self.custom_combos.rows(self.combo_data, settings, self.library)
+            rows = sample_combo_rows(pool, settings.sample_size)
+        except ValueError as error:
+            self.notify(str(error), severity='error')
+            return
+        self.settings = settings
+        self.pending_poison_settings = None
+        self.query_one('#cancel', Button).disabled = True
+        self.query_one('#shuffle', Button).disabled = not (self.has_searched or settings.custom_only)
+        self.generation += 1
+        await self.present_results(rows, len(pool), self.generation)
+
+    @on(Button.Pressed, '#custom-combos')
+    @on(Button.Pressed, '#extend-combo')
+    def open_custom_combos(self, event: Button.Pressed):
+        seed = None
+        character = str(self.query_one('#character', Select).value)
+        index = self.query_one('#results', DataTable).cursor_row
+        if event.button.id == 'extend-combo' and 0 <= index < len(self.rows):
+            finder, seed = self.rows[index]
+            character = finder.character
+        try:
+            self.custom_combos.reload()
+        except (OSError, ValueError) as error:
+            self.notify(f'Could not open custom combos: {error}', severity='error')
+            return
+        self.push_screen(CustomCombosScreen(self.custom_combos, self.combo_data, character=character,
+                         mode='sf' if self.query_one('#sf-notation', Checkbox).value else self.controller,
+                         candidates=self.rows, seed=seed), self.custom_combos_closed)
+
+    async def custom_combos_closed(self, result):
+        mode = result['mode']
+        self.query_one('#sf-notation', Checkbox).value = mode == 'sf'
+        if mode != 'sf':
+            self.query_one('#controller', Select).value = mode
+        if not result['changed']:
+            return
+        checkbox = self.query_one('#show-custom', Checkbox)
+        with checkbox.prevent(Checkbox.Changed):
+            checkbox.value = True
+        if self.searching:
+            self.pending_poison_settings = replace(self.settings, show_custom=True)
+        elif self.has_searched and self.cached_pool_key(self.settings) in self.combo_pools:
+            await self.switch_poison_pool(replace(self.settings, show_custom=True))
+        else:
+            await self.show_custom_without_search()
+
     @on(Button.Pressed, '#star-combo')
     async def action_star_combo(self) -> None:
+        if isinstance(self.screen, CustomCombosScreen):
+            self.screen.save_combo()
+            return
         await self.toggle_combo_mark('starred')
 
     @on(Button.Pressed, '#hide-combo')
     async def action_hide_combo(self) -> None:
+        if isinstance(self.screen, CustomCombosScreen):
+            return
         await self.toggle_combo_mark('hidden')
 
     async def toggle_combo_mark(self, mark: str) -> None:
@@ -1084,23 +1290,32 @@ class ComboFinderApp(App):
         # in the ordinary view updates in place without changing the selection.
         if (mark == 'starred' and self.settings.starred_only) or (
                 mark == 'hidden' and (self.settings.hidden_only or not self.settings.show_hidden)):
-            await self.switch_poison_pool(self.settings)
+            if not self.has_searched:
+                await self.show_custom_without_search()
+            else:
+                await self.switch_poison_pool(self.settings)
         else:
             await self.render_rows(self.generation, selected_index=index)
             self.update_details(index)
 
     @on(Button.Pressed, '#shuffle')
     async def action_shuffle(self) -> None:
-        if not self.has_searched or self.searching:
+        if isinstance(self.screen, CustomCombosScreen):
+            return
+        if (not self.has_searched and not self.settings.custom_only) or self.searching:
             return
         if not self.query_one('#random-count', Input).value.strip():
             self.query_one('#random-count', Input).value = '25'
         try:
-            settings = self.read_settings()
+            settings = self.active_route_settings()
             if settings.sample_size is not None and settings.sample_size < 1:
                 raise ValueError('Random count must be positive, or blank for all results')
         except ValueError as error:
             self.query_one('#status', Static).update(str(error))
+            return
+        if settings.custom_only:
+            await self.show_custom_without_search(settings=settings)
+            self.query_one('#results', DataTable).focus()
             return
         key = self.cached_pool_key(settings)
         if key not in self.combo_pools:
@@ -1108,7 +1323,7 @@ class ComboFinderApp(App):
                     and self.poison_pool_key(settings) == self.poison_pool_key(self.settings)):
                 await self.switch_poison_pool(settings, shuffle=True)
             else:
-                await self.action_search()
+                self.start_combo_search(close_filters=True, settings=settings)
             return
         if self.size.width < 110:
             self.set_filters_visible(False)
@@ -1145,12 +1360,16 @@ class ComboFinderApp(App):
 
     @on(Button.Pressed, '#toggle-details')
     def action_details(self) -> None:
+        if isinstance(self.screen, CustomCombosScreen):
+            return
         details = self.query_one('#details')
         details.display = not details.display
         self.query_one('#toggle-details', Button).set_class(details.display, 'nav-active')
 
     @on(Button.Pressed, '#toggle-filters')
     def action_filters(self) -> None:
+        if isinstance(self.screen, CustomCombosScreen):
+            return
         filters = self.query_one('#filters')
         self.set_filters_visible(not filters.display)
         if filters.display:
@@ -1159,6 +1378,9 @@ class ComboFinderApp(App):
             self.query_one('#results', DataTable).focus()
 
     def action_copy_combo(self) -> None:
+        if isinstance(self.screen, CustomCombosScreen):
+            self.screen.copy_output()
+            return
         index = self.query_one('#results', DataTable).cursor_row
         if 0 <= index < len(self.rows):
             finder, combo = self.rows[index]

@@ -1,0 +1,3732 @@
+{
+  "id": "aki",
+  "display_name": "A.K.I.",
+  "combo_search": {
+    "supported_light_sequences": [
+      [
+        "5lp",
+        "2lp"
+      ],
+      [
+        "5lp",
+        "2lk"
+      ],
+      [
+        "5lp",
+        "5lk"
+      ],
+      [
+        "2lp",
+        "5lp"
+      ],
+      [
+        "2lp",
+        "2lk"
+      ],
+      [
+        "2lp",
+        "2lp",
+        "2lp"
+      ],
+      [
+        "2lp",
+        "2lp",
+        "5lk"
+      ],
+      [
+        "2lp",
+        "5lk"
+      ],
+      [
+        "2lp",
+        "hundun"
+      ],
+      [
+        "2lk",
+        "2lp"
+      ],
+      [
+        "2lk",
+        "2lk"
+      ],
+      [
+        "2lk",
+        "5lp"
+      ],
+      [
+        "2lk",
+        "hundun"
+      ]
+    ],
+    "notes": "Conservative light-string patterns, not a universal light-count limit or proof of whole-route spacing. Hun Dun counts as two inputs. Longer patterns require explicit supporting data.",
+    "sources": [
+      "https://www.scribd.com/document/839104130/The-AKI-Guide",
+      "https://note.com/akino_outi/n/n7594fdffc1dc",
+      "https://shoryu.site/character/aki"
+    ],
+    "coverage": {
+      "reviewed_on": "2026-10-07",
+      "complete": false,
+      "method": "Bounded timing search plus sourced whole recipes and their attack-ending prefixes; no recipe splicing.",
+      "limitations": [
+        "No hitbox/pushback/trajectory simulation",
+        "No meter regeneration model",
+        "Published recipes predate the current patch and require rechecking"
+      ],
+      "game_dump_reference": "https://github.com/alphazolam/MMDK"
+    }
+  },
+  "stats": {
+    "health": 10000,
+    "prejump_frames": 4,
+    "walk_speed": {
+      "forward": 4.52,
+      "backward": 3.2
+    },
+    "dash": {
+      "forward_frames": 19,
+      "backward_frames": 23
+    }
+  },
+  "mechanics": {
+    "poison": true,
+    "poison_detonation": "Toxic Blossom"
+  },
+  "moves": {
+    "5lp": {
+      "name": "Standing Light Punch",
+      "category": "normal",
+      "input": {
+        "sf": "5LP",
+        "mapped": "X"
+      },
+      "startup": 5,
+      "active_frames": 2,
+      "recovery_on_hit": 7,
+      "damage": [
+        300
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 4,
+        "advantage_min": 4,
+        "advantage_max": 4
+      },
+      "block": {
+        "advantage": -1,
+        "advantage_min": -1,
+        "advantage_max": -1
+      },
+      "cancel": {
+        "chain": true,
+        "chain_targets": [
+          "2lp",
+          "2lk"
+        ],
+        "special": true,
+        "super": true,
+        "target_combo": true,
+        "target_followups": [
+          "5lp"
+        ]
+      },
+      "properties": []
+    },
+    "5mp": {
+      "name": "Standing Medium Punch",
+      "category": "normal",
+      "input": {
+        "sf": "5MP",
+        "mapped": "Y"
+      },
+      "startup": 6,
+      "active_frames": 5,
+      "recovery_on_hit": 14,
+      "damage": [
+        600
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 3,
+        "advantage_min": 3,
+        "advantage_max": 3
+      },
+      "block": {
+        "advantage": -3,
+        "advantage_min": -3,
+        "advantage_max": -3
+      },
+      "cancel": {
+        "chain": false,
+        "special": true,
+        "super": true,
+        "target_combo": false
+      },
+      "properties": []
+    },
+    "5hp": {
+      "name": "Standing Heavy Punch",
+      "category": "normal",
+      "input": {
+        "sf": "5HP",
+        "mapped": "RB"
+      },
+      "startup": 12,
+      "active_frames": 3,
+      "recovery_on_hit": 21,
+      "damage": [
+        800
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 1,
+        "advantage_min": 1,
+        "advantage_max": 1
+      },
+      "block": {
+        "advantage": -4,
+        "advantage_min": -4,
+        "advantage_max": -4
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": true,
+        "target_followups": [
+          "5hp"
+        ]
+      },
+      "properties": []
+    },
+    "5lk": {
+      "name": "Standing Light Kick",
+      "category": "normal",
+      "input": {
+        "sf": "5LK",
+        "mapped": "A"
+      },
+      "startup": 4,
+      "active_frames": 3,
+      "recovery_on_hit": 12,
+      "damage": [
+        300
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 3,
+        "advantage_min": 3,
+        "advantage_max": 3
+      },
+      "block": {
+        "advantage": -3,
+        "advantage_min": -3,
+        "advantage_max": -3
+      },
+      "cancel": {
+        "chain": false,
+        "special": true,
+        "super": true,
+        "target_combo": false
+      },
+      "properties": []
+    },
+    "5mk": {
+      "name": "Standing Medium Kick",
+      "category": "normal",
+      "input": {
+        "sf": "5MK",
+        "mapped": "B"
+      },
+      "startup": 8,
+      "active_frames": 3,
+      "recovery_on_hit": 15,
+      "damage": [
+        700
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 6,
+        "advantage_min": 6,
+        "advantage_max": 6
+      },
+      "block": {
+        "advantage": -2,
+        "advantage_min": -2,
+        "advantage_max": -2
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": []
+    },
+    "5hk": {
+      "name": "Standing Heavy Kick",
+      "category": "normal",
+      "input": {
+        "sf": "5HK",
+        "mapped": "R2"
+      },
+      "startup": 9,
+      "active_frames": 4,
+      "recovery_on_hit": 19,
+      "damage": [
+        800
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 4,
+        "advantage_min": 4,
+        "advantage_max": 4
+      },
+      "block": {
+        "advantage": -3,
+        "advantage_min": -3,
+        "advantage_max": -3
+      },
+      "cancel": {
+        "chain": false,
+        "special": true,
+        "super": true,
+        "target_combo": false
+      },
+      "properties": [],
+      "conditions": {
+        "punish_counter": {
+          "hit": {
+            "state": "normal",
+            "advantage": 12,
+            "advantage_min": 12,
+            "advantage_max": 12
+          }
+        }
+      }
+    },
+    "2lp": {
+      "name": "Crouching Light Punch",
+      "category": "normal",
+      "input": {
+        "sf": "2LP",
+        "mapped": "2X"
+      },
+      "startup": 4,
+      "active_frames": 2,
+      "recovery_on_hit": 9,
+      "damage": [
+        300
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 4,
+        "advantage_min": 4,
+        "advantage_max": 4
+      },
+      "block": {
+        "advantage": -1,
+        "advantage_min": -1,
+        "advantage_max": -1
+      },
+      "cancel": {
+        "chain": true,
+        "chain_targets": [
+          "5lp",
+          "2lp",
+          "2lk"
+        ],
+        "special": true,
+        "super": true,
+        "target_combo": false
+      },
+      "properties": []
+    },
+    "2mp": {
+      "name": "Crouching Medium Punch",
+      "category": "normal",
+      "input": {
+        "sf": "2MP",
+        "mapped": "2Y"
+      },
+      "startup": 7,
+      "active_frames": 3,
+      "recovery_on_hit": 18,
+      "damage": [
+        600
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 1,
+        "advantage_min": 1,
+        "advantage_max": 1
+      },
+      "block": {
+        "advantage": -3,
+        "advantage_min": -3,
+        "advantage_max": -3
+      },
+      "cancel": {
+        "chain": false,
+        "special": true,
+        "super": true,
+        "target_combo": false
+      },
+      "properties": []
+    },
+    "2hp": {
+      "name": "Crouching Heavy Punch",
+      "category": "normal",
+      "input": {
+        "sf": "2HP",
+        "mapped": "2RB"
+      },
+      "startup": 10,
+      "active_frames": 3,
+      "recovery_on_hit": 28,
+      "damage": [
+        900
+      ],
+      "hit": {
+        "state": "knockdown",
+        "advantage": 27,
+        "advantage_min": 27,
+        "advantage_max": 27
+      },
+      "block": {
+        "advantage": -8,
+        "advantage_min": -8,
+        "advantage_max": -8
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "low"
+      ],
+      "conditions": {
+        "punish_counter": {
+          "applies_poison": true
+        }
+      }
+    },
+    "2lk": {
+      "name": "Crouching Light Kick",
+      "category": "normal",
+      "input": {
+        "sf": "2LK",
+        "mapped": "2A"
+      },
+      "startup": 5,
+      "active_frames": 3,
+      "recovery_on_hit": 8,
+      "damage": [
+        200
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 3,
+        "advantage_min": 3,
+        "advantage_max": 3
+      },
+      "block": {
+        "advantage": -2,
+        "advantage_min": -2,
+        "advantage_max": -2
+      },
+      "cancel": {
+        "chain": true,
+        "chain_targets": [
+          "5lp",
+          "2lp",
+          "2lk"
+        ],
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "low"
+      ]
+    },
+    "2mk": {
+      "name": "Crouching Medium Kick",
+      "category": "normal",
+      "input": {
+        "sf": "2MK",
+        "mapped": "2B"
+      },
+      "startup": 7,
+      "active_frames": 3,
+      "recovery_on_hit": 16,
+      "damage": [
+        600
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 5,
+        "advantage_min": 5,
+        "advantage_max": 5
+      },
+      "block": {
+        "advantage": 1,
+        "advantage_min": 1,
+        "advantage_max": 1
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": true,
+        "target_combo": false
+      },
+      "properties": [
+        "low"
+      ],
+      "scaling": {
+        "initial": 0.8,
+        "combo": 0.8
+      }
+    },
+    "2hk": {
+      "name": "Crouching Heavy Kick",
+      "category": "normal",
+      "input": {
+        "sf": "2HK",
+        "mapped": "2R2"
+      },
+      "startup": 10,
+      "active_frames": 6,
+      "recovery_on_hit": 20,
+      "damage": [
+        900
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 0,
+        "advantage_min": 0,
+        "advantage_max": 0
+      },
+      "block": {
+        "advantage": -3,
+        "advantage_min": -3,
+        "advantage_max": -3
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": true,
+        "target_combo": false
+      },
+      "properties": [],
+      "conditions": {
+        "punish_counter": {
+          "hit": {
+            "state": "knockdown",
+            "advantage": 48,
+            "advantage_min": 48,
+            "advantage_max": 48
+          },
+          "juggle_state": "limited"
+        }
+      }
+    },
+    "3mp": {
+      "name": "Pu Lao",
+      "category": "unique",
+      "input": {
+        "sf": "3MP",
+        "mapped": "3Y"
+      },
+      "startup": 24,
+      "active_frames": 3,
+      "recovery_on_hit": 18,
+      "damage": [
+        600
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 3,
+        "advantage_min": 3,
+        "advantage_max": 3
+      },
+      "block": {
+        "advantage": -3,
+        "advantage_min": -3,
+        "advantage_max": -3
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "overhead"
+      ]
+    },
+    "6hp": {
+      "name": "Chi Wen",
+      "category": "unique",
+      "input": {
+        "sf": "6HP",
+        "mapped": "6RB"
+      },
+      "startup": 16,
+      "active_frames": 4,
+      "recovery_on_hit": 20,
+      "damage": [
+        900
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 3,
+        "advantage_min": 3,
+        "advantage_max": 3
+      },
+      "block": {
+        "advantage": -3,
+        "advantage_min": -3,
+        "advantage_max": -3
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": true,
+        "target_combo": false
+      },
+      "properties": []
+    },
+    "6hk": {
+      "name": "Qiu Niu",
+      "category": "unique",
+      "input": {
+        "sf": "6HK",
+        "mapped": "6R2"
+      },
+      "startup": 14,
+      "damage": [
+        400,
+        400
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 4,
+        "advantage_min": 4,
+        "advantage_max": 4
+      },
+      "block": {
+        "advantage": 2,
+        "advantage_min": 2,
+        "advantage_max": 2
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "low_crush"
+      ]
+    },
+    "hundun": {
+      "name": "Hun Dun",
+      "category": "target_combo",
+      "input": {
+        "sf": "LP > LP",
+        "mapped": "X > X"
+      },
+      "sequence": [
+        "5LP",
+        "LP"
+      ],
+      "startup": 5,
+      "active_frames": 2,
+      "recovery_on_hit": 15,
+      "damage": [
+        300,
+        300
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 1,
+        "advantage_min": 1,
+        "advantage_max": 1
+      },
+      "block": {
+        "advantage": -3,
+        "advantage_min": -3,
+        "advantage_max": -3
+      },
+      "cancel": {
+        "chain": false,
+        "special": true,
+        "super": true,
+        "target_combo": false
+      },
+      "properties": []
+    },
+    "qiong_qi": {
+      "name": "Qiong Qi",
+      "category": "target_combo",
+      "input": {
+        "sf": "HP > HP",
+        "mapped": "RB > RB"
+      },
+      "sequence": [
+        "5HP",
+        "HP"
+      ],
+      "startup": 12,
+      "damage": [
+        800,
+        400
+      ],
+      "hit": {
+        "state": "knockdown",
+        "advantage": 34,
+        "advantage_min": 34,
+        "advantage_max": 34
+      },
+      "block": {
+        "advantage": -5,
+        "advantage_min": -5,
+        "advantage_max": -5
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "applies_poison"
+      ],
+      "conditions": {
+        "opponent_poisoned": {
+          "hit": {
+            "state": "knockdown",
+            "advantage": 54,
+            "advantage_min": 54,
+            "advantage_max": 54
+          },
+          "detonates_poison": true
+        }
+      }
+    },
+    "j_lp": {
+      "name": "Jump Light Punch",
+      "category": "jump_normal",
+      "input": {
+        "sf": "j.LP",
+        "mapped": "j.X"
+      },
+      "startup": 5,
+      "damage": [
+        300
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": null,
+        "advantage_min": 2,
+        "advantage_max": 9
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": -2,
+        "advantage_max": 5
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "airborne",
+        "overhead"
+      ]
+    },
+    "j_mp": {
+      "name": "Jump Medium Punch",
+      "category": "jump_normal",
+      "input": {
+        "sf": "j.MP",
+        "mapped": "j.Y"
+      },
+      "startup": 7,
+      "damage": [
+        700
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": null,
+        "advantage_min": 9,
+        "advantage_max": 11
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": 5,
+        "advantage_max": 7
+      },
+      "cancel": {
+        "chain": false,
+        "special": true,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "airborne",
+        "overhead",
+        "juggle_on_air_hit"
+      ]
+    },
+    "j_hp": {
+      "name": "Jump Heavy Punch",
+      "category": "jump_normal",
+      "input": {
+        "sf": "j.HP",
+        "mapped": "j.RB"
+      },
+      "startup": 11,
+      "damage": [
+        800
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": null,
+        "advantage_min": 6,
+        "advantage_max": 14
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": 2,
+        "advantage_max": 11
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "airborne",
+        "overhead"
+      ]
+    },
+    "j_lk": {
+      "name": "Jump Light Kick",
+      "category": "jump_normal",
+      "input": {
+        "sf": "j.LK",
+        "mapped": "j.A"
+      },
+      "startup": 5,
+      "damage": [
+        300
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": null,
+        "advantage_min": 4,
+        "advantage_max": 9
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": 0,
+        "advantage_max": 5
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "airborne",
+        "overhead",
+        "cross_up"
+      ]
+    },
+    "j_mk": {
+      "name": "Jump Medium Kick",
+      "category": "jump_normal",
+      "input": {
+        "sf": "j.MK",
+        "mapped": "j.B"
+      },
+      "startup": 7,
+      "damage": [
+        500
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": null,
+        "advantage_min": 5,
+        "advantage_max": 12
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": 3,
+        "advantage_max": 9
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "airborne",
+        "overhead"
+      ]
+    },
+    "j_hk": {
+      "name": "Jump Heavy Kick",
+      "category": "jump_normal",
+      "input": {
+        "sf": "j.HK",
+        "mapped": "j.R2"
+      },
+      "startup": 8,
+      "damage": [
+        800
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": null,
+        "advantage_min": 9,
+        "advantage_max": 15
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": 5,
+        "advantage_max": 11
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "airborne",
+        "overhead"
+      ]
+    },
+    "j_2hp": {
+      "name": "Cross-up Heavy Punch",
+      "category": "jump_normal",
+      "input": {
+        "sf": "j.2HP",
+        "mapped": "j.2RB"
+      },
+      "startup": 9,
+      "damage": [
+        800
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": null,
+        "advantage_min": 6,
+        "advantage_max": 14
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": 2,
+        "advantage_max": 9
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "airborne",
+        "overhead",
+        "cross_up_only"
+      ]
+    },
+    "nightshade_pulse": {
+      "name": "Nightshade Pulse",
+      "category": "special",
+      "input": {
+        "sf": "214LP",
+        "mapped": "214X"
+      },
+      "startup": 17,
+      "damage": [
+        500
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": null,
+        "advantage_min": -5,
+        "advantage_max": null
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": -10,
+        "advantage_max": null
+      },
+      "cancel": {
+        "chain": false,
+        "special": true,
+        "super": true,
+        "target_combo": false,
+        "specific_targets": [
+          "nightshade_chaser",
+          "od_snake_step",
+          "level_3",
+          "nightshade_chaser_burst"
+        ],
+        "followup_window": {
+          "start_frame": 30,
+          "end_frame": 36
+        },
+        "super_levels": [
+          3
+        ]
+      },
+      "properties": [
+        "applies_poison",
+        "variable_advantage"
+      ],
+      "sources": [
+        "https://ultimateframedata.com/sf6/aki",
+        "https://frame-search.com/?character_name=A.K.I&lang=en-us&pageNo=2"
+      ]
+    },
+    "od_nightshade_pulse": {
+      "name": "OD Nightshade Pulse",
+      "category": "od_special",
+      "input": {
+        "sf": "214PP",
+        "mapped": "214PP"
+      },
+      "startup": 16,
+      "damage": [
+        300,
+        400
+      ],
+      "hit": {
+        "state": "knockdown",
+        "advantage": null,
+        "advantage_min": 45,
+        "advantage_max": null
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": 1,
+        "advantage_max": null
+      },
+      "cancel": {
+        "chain": false,
+        "special": true,
+        "super": true,
+        "target_combo": false,
+        "specific_targets": [
+          "od_nightshade_chaser",
+          "od_snake_step",
+          "level_2",
+          "level_3",
+          "od_nightshade_chaser_burst"
+        ],
+        "followup_window": {
+          "start_frame": 34,
+          "end_frame": 35
+        },
+        "super_levels": [
+          2,
+          3
+        ]
+      },
+      "properties": [
+        "overdrive",
+        "applies_poison",
+        "limited_juggle",
+        "variable_advantage"
+      ],
+      "sources": [
+        "https://ultimateframedata.com/sf6/aki",
+        "https://frame-search.com/?character_name=A.K.I&lang=en-us&pageNo=2"
+      ]
+    },
+    "nightshade_chaser": {
+      "name": "Nightshade Chaser",
+      "category": "special_followup",
+      "input": {
+        "sf": "6HP",
+        "mapped": "6RB"
+      },
+      "requires": [
+        "nightshade_pulse"
+      ],
+      "startup": 13,
+      "damage": [
+        500
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": -4,
+        "advantage_min": -4,
+        "advantage_max": -4
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": -16,
+        "advantage_max": null
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": true,
+        "target_combo": false,
+        "super_levels": [
+          3
+        ]
+      },
+      "properties": [
+        "applies_poison"
+      ],
+      "conditions": {
+        "opponent_poisoned": {
+          "damage": [
+            800
+          ],
+          "hit": {
+            "state": "knockdown",
+            "advantage": 38,
+            "advantage_min": 38,
+            "advantage_max": 38
+          },
+          "detonates_poison": true
+        }
+      },
+      "sources": [
+        "https://frame-search.com/?character_name=A.K.I&lang=en-us&pageNo=2"
+      ]
+    },
+    "nightshade_chaser_burst": {
+      "name": "Nightshade Chaser Burst",
+      "category": "special_followup",
+      "input": {
+        "sf": "6HP",
+        "mapped": "6RB"
+      },
+      "requires": [
+        "nightshade_pulse"
+      ],
+      "startup": 14,
+      "damage": [
+        800
+      ],
+      "hit": {
+        "state": "knockdown",
+        "advantage": null,
+        "advantage_min": 42,
+        "advantage_max": null
+      },
+      "block": {
+        "advantage": -4,
+        "advantage_min": -4,
+        "advantage_max": -4
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "applies_poison",
+        "detonates_nightshade_pulse",
+        "variable_advantage"
+      ]
+    },
+    "orchid_spring": {
+      "name": "Orchid Spring",
+      "category": "special",
+      "input": {
+        "sf": "214MP",
+        "mapped": "214Y"
+      },
+      "startup": 26,
+      "damage": [],
+      "hit": {
+        "state": "none",
+        "advantage": null,
+        "advantage_min": null,
+        "advantage_max": null
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": null,
+        "advantage_max": null
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "unblockable",
+        "poison_pool"
+      ]
+    },
+    "orchid_wreath": {
+      "name": "Orchid Wreath",
+      "category": "special",
+      "input": {
+        "sf": "214HP",
+        "mapped": "214RB"
+      },
+      "startup": 13,
+      "damage": [
+        200,
+        600
+      ],
+      "hit": {
+        "state": "knockdown",
+        "advantage": 40,
+        "advantage_min": 40,
+        "advantage_max": 40
+      },
+      "block": {
+        "advantage": -4,
+        "advantage_min": -4,
+        "advantage_max": -4
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": true,
+        "target_combo": false,
+        "super_levels": [
+          3
+        ]
+      },
+      "properties": [
+        "applies_poison",
+        "limited_juggle"
+      ],
+      "sources": [
+        "https://frame-search.com/?character_name=A.K.I&lang=en-us&pageNo=2"
+      ]
+    },
+    "light_serpent_lash": {
+      "name": "Light Serpent Lash",
+      "category": "special",
+      "input": {
+        "sf": "236LP",
+        "mapped": "236X"
+      },
+      "startup": 14,
+      "damage": [
+        500
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": null,
+        "advantage_min": 1,
+        "advantage_max": 3
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": -8,
+        "advantage_max": -6
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": true,
+        "target_combo": false,
+        "super_levels": [
+          3
+        ]
+      },
+      "properties": [
+        "applies_poison",
+        "variable_advantage"
+      ],
+      "conditions": {
+        "opponent_poisoned": {
+          "damage": [
+            800
+          ],
+          "detonates_poison": true
+        }
+      },
+      "sources": [
+        "https://frame-search.com/?character_name=A.K.I&lang=en-us&pageNo=2"
+      ]
+    },
+    "medium_serpent_lash": {
+      "name": "Medium Serpent Lash",
+      "category": "special",
+      "input": {
+        "sf": "236MP",
+        "mapped": "236Y"
+      },
+      "startup": 14,
+      "damage": [
+        600
+      ],
+      "hit": {
+        "state": "knockdown",
+        "advantage": 44,
+        "advantage_min": 44,
+        "advantage_max": 44
+      },
+      "block": {
+        "advantage": -12,
+        "advantage_min": -12,
+        "advantage_max": -12
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": true,
+        "target_combo": false,
+        "super_levels": [
+          3
+        ]
+      },
+      "properties": [
+        "applies_poison"
+      ],
+      "conditions": {
+        "opponent_poisoned": {
+          "damage": [
+            700
+          ],
+          "hit": {
+            "state": "crumple",
+            "advantage": 69,
+            "advantage_min": 69,
+            "advantage_max": 69
+          },
+          "detonates_poison": true
+        }
+      },
+      "sources": [
+        "https://frame-search.com/?character_name=A.K.I&lang=en-us&pageNo=2"
+      ]
+    },
+    "heavy_serpent_lash": {
+      "name": "Heavy Serpent Lash",
+      "category": "special",
+      "input": {
+        "sf": "236HP",
+        "mapped": "236RB"
+      },
+      "startup": 11,
+      "damage": [
+        700
+      ],
+      "hit": {
+        "state": "knockdown",
+        "advantage": 44,
+        "advantage_min": 44,
+        "advantage_max": 44
+      },
+      "block": {
+        "advantage": -20,
+        "advantage_min": -20,
+        "advantage_max": -20
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": true,
+        "target_combo": false,
+        "super_levels": [
+          3
+        ]
+      },
+      "properties": [
+        "applies_poison",
+        "anti_air_invulnerable"
+      ],
+      "conditions": {
+        "opponent_poisoned": {
+          "damage": [
+            800
+          ],
+          "hit": {
+            "state": "crumple",
+            "advantage": 53,
+            "advantage_min": 53,
+            "advantage_max": 53
+          },
+          "detonates_poison": true
+        }
+      },
+      "sources": [
+        "https://frame-search.com/?character_name=A.K.I&lang=en-us&pageNo=2"
+      ]
+    },
+    "od_serpent_lash": {
+      "name": "OD Serpent Lash",
+      "category": "od_special",
+      "input": {
+        "sf": "236PP",
+        "mapped": "236PP"
+      },
+      "startup": 21,
+      "damage": [
+        600
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 4,
+        "advantage_min": 4,
+        "advantage_max": 4
+      },
+      "block": {
+        "advantage": -14,
+        "advantage_min": -14,
+        "advantage_max": -14
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "overdrive",
+        "applies_poison"
+      ],
+      "conditions": {
+        "opponent_poisoned": {
+          "damage": [
+            800
+          ],
+          "hit": {
+            "state": "crumple",
+            "advantage": 71,
+            "advantage_min": 71,
+            "advantage_max": 71
+          },
+          "block": {
+            "advantage": -11,
+            "advantage_min": -11,
+            "advantage_max": -11
+          },
+          "detonates_poison": true
+        }
+      }
+    },
+    "light_cruel_fate": {
+      "name": "Light Cruel Fate",
+      "category": "special",
+      "input": {
+        "sf": "214LK",
+        "mapped": "214A"
+      },
+      "startup": 24,
+      "damage": [
+        200,
+        200,
+        200,
+        200
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 2,
+        "advantage_min": 2,
+        "advantage_max": 2
+      },
+      "block": {
+        "advantage": -3,
+        "advantage_min": -3,
+        "advantage_max": -3
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": true,
+        "target_combo": false,
+        "super_levels": [
+          3
+        ]
+      },
+      "properties": [],
+      "conditions": {
+        "opponent_airborne": {
+          "hit": {
+            "state": "knockdown",
+            "advantage": null,
+            "advantage_min": 38,
+            "advantage_max": null
+          }
+        }
+      },
+      "sources": [
+        "https://frame-search.com/?character_name=A.K.I&lang=en-us&pageNo=2"
+      ]
+    },
+    "medium_cruel_fate": {
+      "name": "Medium Cruel Fate",
+      "category": "special",
+      "input": {
+        "sf": "214MK",
+        "mapped": "214B"
+      },
+      "startup": 28,
+      "damage": [
+        200,
+        200,
+        200,
+        300
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 3,
+        "advantage_min": 3,
+        "advantage_max": 3
+      },
+      "block": {
+        "advantage": -3,
+        "advantage_min": -3,
+        "advantage_max": -3
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": true,
+        "target_combo": false,
+        "super_levels": [
+          3
+        ]
+      },
+      "properties": [],
+      "conditions": {
+        "opponent_airborne": {
+          "hit": {
+            "state": "knockdown",
+            "advantage": null,
+            "advantage_min": 38,
+            "advantage_max": null
+          }
+        }
+      },
+      "sources": [
+        "https://frame-search.com/?character_name=A.K.I&lang=en-us&pageNo=2"
+      ]
+    },
+    "heavy_cruel_fate": {
+      "name": "Heavy Cruel Fate",
+      "category": "special",
+      "input": {
+        "sf": "214HK",
+        "mapped": "214R2"
+      },
+      "startup": 33,
+      "damage": [
+        200,
+        200,
+        200,
+        400
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 4,
+        "advantage_min": 4,
+        "advantage_max": 4
+      },
+      "block": {
+        "advantage": -3,
+        "advantage_min": -3,
+        "advantage_max": -3
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": true,
+        "target_combo": false,
+        "super_levels": [
+          3
+        ]
+      },
+      "properties": [],
+      "conditions": {
+        "opponent_airborne": {
+          "hit": {
+            "state": "knockdown",
+            "advantage": null,
+            "advantage_min": 41,
+            "advantage_max": null
+          }
+        }
+      },
+      "sources": [
+        "https://frame-search.com/?character_name=A.K.I&lang=en-us&pageNo=2"
+      ]
+    },
+    "od_cruel_fate": {
+      "name": "OD Cruel Fate",
+      "category": "od_special",
+      "input": {
+        "sf": "214KK",
+        "mapped": "214KK"
+      },
+      "startup": 28,
+      "damage": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        600
+      ],
+      "hit": {
+        "state": "knockdown",
+        "advantage": 42,
+        "advantage_min": 42,
+        "advantage_max": 42
+      },
+      "block": {
+        "advantage": 2,
+        "advantage_min": 2,
+        "advantage_max": 2
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": true,
+        "target_combo": false,
+        "specific_targets": [
+          "level_2",
+          "level_3"
+        ],
+        "condition": "non_hitgrab_version",
+        "super_levels": [
+          2,
+          3
+        ]
+      },
+      "properties": [
+        "overdrive"
+      ],
+      "sources": [
+        "https://frame-search.com/?character_name=A.K.I&lang=en-us&pageNo=2",
+        "https://ultimateframedata.com/sf6/aki"
+      ]
+    },
+    "light_snake_step": {
+      "name": "Light Snake Step",
+      "category": "movement_special",
+      "input": {
+        "sf": "236LK",
+        "mapped": "236A"
+      },
+      "startup": null,
+      "damage": [],
+      "hit": {
+        "state": "none",
+        "advantage": null,
+        "advantage_min": null,
+        "advantage_max": null
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": null,
+        "advantage_max": null
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "movement",
+        "feint"
+      ]
+    },
+    "medium_snake_step": {
+      "name": "Medium Snake Step",
+      "category": "movement_special",
+      "input": {
+        "sf": "236MK",
+        "mapped": "236B"
+      },
+      "startup": null,
+      "damage": [],
+      "hit": {
+        "state": "none",
+        "advantage": null,
+        "advantage_min": null,
+        "advantage_max": null
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": null,
+        "advantage_max": null
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "movement"
+      ]
+    },
+    "heavy_snake_step": {
+      "name": "Heavy Snake Step",
+      "category": "movement_special",
+      "input": {
+        "sf": "236HK",
+        "mapped": "236R2"
+      },
+      "startup": null,
+      "damage": [],
+      "hit": {
+        "state": "none",
+        "advantage": null,
+        "advantage_min": null,
+        "advantage_max": null
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": null,
+        "advantage_max": null
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "movement",
+        "cross_up"
+      ]
+    },
+    "od_snake_step": {
+      "name": "OD Snake Step",
+      "category": "movement_special",
+      "input": {
+        "sf": "236KK",
+        "mapped": "236KK"
+      },
+      "startup": null,
+      "damage": [],
+      "hit": {
+        "state": "none",
+        "advantage": null,
+        "advantage_min": null,
+        "advantage_max": null
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": null,
+        "advantage_max": null
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "movement",
+        "overdrive",
+        "cross_up",
+        "strike_invulnerable",
+        "projectile_invulnerable"
+      ]
+    },
+    "sinister_slide": {
+      "name": "Sinister Slide",
+      "category": "stance",
+      "input": {
+        "sf": "2PP",
+        "mapped": "2PP"
+      },
+      "startup": 11,
+      "damage": [],
+      "hit": {
+        "state": "none",
+        "advantage": null,
+        "advantage_min": null,
+        "advantage_max": null
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": null,
+        "advantage_max": null
+      },
+      "cancel": {
+        "chain": false,
+        "special": true,
+        "super": false,
+        "target_combo": false,
+        "specific_targets": [
+          "venomous_fang",
+          "heel_strike",
+          "entrapment"
+        ]
+      },
+      "properties": [
+        "stance"
+      ]
+    },
+    "venomous_fang": {
+      "name": "Venomous Fang",
+      "category": "stance_followup",
+      "input": {
+        "sf": "P",
+        "mapped": "P"
+      },
+      "requires": [
+        "sinister_slide"
+      ],
+      "startup": 19,
+      "damage": [
+        1100
+      ],
+      "hit": {
+        "state": "knockdown",
+        "advantage": null,
+        "advantage_min": 20,
+        "advantage_max": 34
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": -25,
+        "advantage_max": -11
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "applies_poison"
+      ],
+      "conditions": {
+        "opponent_poisoned": {
+          "hit": {
+            "state": "crumple",
+            "advantage": null,
+            "advantage_min": 67,
+            "advantage_max": 81
+          },
+          "detonates_poison": true
+        }
+      }
+    },
+    "heel_strike": {
+      "name": "Heel Strike",
+      "category": "stance_followup",
+      "input": {
+        "sf": "K",
+        "mapped": "K"
+      },
+      "requires": [
+        "sinister_slide"
+      ],
+      "startup": 11,
+      "damage": [
+        300,
+        300
+      ],
+      "hit": {
+        "state": "normal",
+        "advantage": 4,
+        "advantage_min": 4,
+        "advantage_max": 4
+      },
+      "block": {
+        "advantage": -3,
+        "advantage_min": -3,
+        "advantage_max": -3
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "limited_juggle_on_air_hit"
+      ]
+    },
+    "entrapment": {
+      "name": "Entrapment",
+      "category": "stance_followup",
+      "input": {
+        "sf": "LP+LK",
+        "mapped": "X+A"
+      },
+      "requires": [
+        "sinister_slide"
+      ],
+      "startup": 23,
+      "damage": [
+        1852
+      ],
+      "hit": {
+        "state": "hard_knockdown",
+        "advantage": 16,
+        "advantage_min": 16,
+        "advantage_max": 16
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": null,
+        "advantage_max": null
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "throw"
+      ]
+    },
+    "sa1": {
+      "name": "Deadly Implication",
+      "category": "super",
+      "super_level": 1,
+      "input": {
+        "sf": "236236K",
+        "mapped": "236236K"
+      },
+      "startup": 10,
+      "damage": [
+        850,
+        950
+      ],
+      "hit": {
+        "state": "knockdown",
+        "advantage": 30,
+        "advantage_min": 30,
+        "advantage_max": 30
+      },
+      "block": {
+        "advantage": -46,
+        "advantage_min": -46,
+        "advantage_max": -46
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "applies_poison",
+        "armor_break"
+      ]
+    },
+    "sa2": {
+      "name": "Tainted Talons",
+      "category": "super",
+      "super_level": 2,
+      "input": {
+        "sf": "214214P",
+        "mapped": "214214P"
+      },
+      "startup": 7,
+      "damage": [
+        2600
+      ],
+      "hit": {
+        "state": "knockdown",
+        "advantage": 30,
+        "advantage_min": 30,
+        "advantage_max": 30
+      },
+      "block": {
+        "advantage": -19,
+        "advantage_min": -19,
+        "advantage_max": -19
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "armor_break",
+        "creates_poison_pool"
+      ]
+    },
+    "sa3": {
+      "name": "Claws of Ya Zi",
+      "category": "super",
+      "super_level": 3,
+      "input": {
+        "sf": "236236P",
+        "mapped": "236236P"
+      },
+      "startup": 10,
+      "damage": [
+        4000
+      ],
+      "hit": {
+        "state": "hard_knockdown",
+        "advantage": 30,
+        "advantage_min": 30,
+        "advantage_max": 30
+      },
+      "block": {
+        "advantage": -36,
+        "advantage_min": -36,
+        "advantage_max": -36
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "fully_invulnerable",
+        "armor_break"
+      ],
+      "conditions": {
+        "critical_art": {
+          "damage": [
+            4500
+          ],
+          "hit": {
+            "state": "hard_knockdown",
+            "advantage": 21,
+            "advantage_min": 21,
+            "advantage_max": 21
+          }
+        }
+      }
+    },
+    "forward_throw": {
+      "name": "Forward Throw",
+      "category": "throw",
+      "input": {
+        "sf": "LP+LK",
+        "mapped": "X+A"
+      },
+      "startup": 5,
+      "damage": [
+        1200
+      ],
+      "hit": {
+        "state": "knockdown",
+        "advantage": 19,
+        "advantage_min": 19,
+        "advantage_max": 19
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": null,
+        "advantage_max": null
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "throw"
+      ]
+    },
+    "back_throw": {
+      "name": "Back Throw",
+      "category": "throw",
+      "input": {
+        "sf": "4LP+LK",
+        "mapped": "4X+A"
+      },
+      "startup": 5,
+      "damage": [
+        1200
+      ],
+      "hit": {
+        "state": "knockdown",
+        "advantage": 27,
+        "advantage_min": 27,
+        "advantage_max": 27
+      },
+      "block": {
+        "advantage": null,
+        "advantage_min": null,
+        "advantage_max": null
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "throw"
+      ]
+    },
+    "od_nightshade_chaser": {
+      "name": "OD Nightshade Chaser",
+      "category": "special_followup",
+      "input": {
+        "sf": "6HP",
+        "mapped": "6RB"
+      },
+      "requires": [
+        "od_nightshade_pulse"
+      ],
+      "startup": 13,
+      "damage": [
+        600
+      ],
+      "hit": {
+        "state": "knockdown",
+        "advantage": null,
+        "advantage_min": 31,
+        "advantage_max": 44
+      },
+      "block": {
+        "advantage": -13,
+        "advantage_min": -13,
+        "advantage_max": -13
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": true,
+        "super_levels": [
+          2,
+          3
+        ],
+        "target_combo": false
+      },
+      "properties": [
+        "applies_poison"
+      ],
+      "conditions": {
+        "opponent_poisoned": {
+          "damage": [
+            800
+          ],
+          "hit": {
+            "state": "juggle",
+            "advantage": null,
+            "advantage_min": 31,
+            "advantage_max": 44
+          },
+          "detonates_poison": true
+        }
+      },
+      "sources": [
+        "https://ultimateframedata.com/sf6/aki",
+        "https://frame-search.com/?character_name=A.K.I&lang=en-us&pageNo=2",
+        "https://www.scribd.com/document/839104130/The-AKI-Guide"
+      ],
+      "active_frames": 5,
+      "recovery_on_hit": 28,
+      "meter_cost": {
+        "drive": 0,
+        "super": 0
+      },
+      "notes": [
+        "No additional OD cost; requires OD Nightshade Pulse. Knockdown/juggle advantage is not grounded hitstun."
+      ]
+    },
+    "od_nightshade_chaser_burst": {
+      "name": "OD Nightshade Chaser Burst",
+      "category": "special_followup",
+      "input": {
+        "sf": "6HP",
+        "mapped": "6RB"
+      },
+      "requires": [
+        "od_nightshade_pulse"
+      ],
+      "startup": 14,
+      "damage": [
+        800,
+        800
+      ],
+      "hit": {
+        "state": "juggle",
+        "advantage": null,
+        "advantage_min": 43,
+        "advantage_max": 57
+      },
+      "block": {
+        "advantage": -4,
+        "advantage_min": -4,
+        "advantage_max": -4
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "applies_poison",
+        "detonates_nightshade_pulse",
+        "variable_advantage"
+      ],
+      "meter_cost": {
+        "drive": 0,
+        "super": 0
+      },
+      "sources": [
+        "https://ultimateframedata.com/sf6/aki",
+        "https://frame-search.com/?character_name=A.K.I&lang=en-us&pageNo=2"
+      ],
+      "notes": [
+        "Detonates an unhit projectile; cannot simply add its damage to two already-connected Pulse hits. Variant recorded but not automatically chained."
+      ]
+    },
+    "drive_rush": {
+      "name": "Parry Drive Rush",
+      "category": "system",
+      "input": {
+        "sf": "DR(MP+MK,66)",
+        "mapped": "DR(MP+MK,66)"
+      },
+      "startup": null,
+      "damage": [],
+      "hit": {
+        "state": "none",
+        "advantage": null
+      },
+      "cancel": {},
+      "meter_cost": {
+        "drive": 1,
+        "super": 0
+      },
+      "properties": [],
+      "sources": [
+        "https://www.scribd.com/document/839104130/The-AKI-Guide",
+        "https://note.com/konmaosan/n/n2a62ef155df9"
+      ]
+    },
+    "drive_rush_cancel": {
+      "name": "Drive Rush Cancel",
+      "category": "system",
+      "input": {
+        "sf": "DRC(MP+MK)",
+        "mapped": "DRC(MP+MK)"
+      },
+      "startup": null,
+      "damage": [],
+      "hit": {
+        "state": "none",
+        "advantage": null
+      },
+      "cancel": {},
+      "meter_cost": {
+        "drive": 3,
+        "super": 0
+      },
+      "properties": [],
+      "sources": [
+        "https://www.scribd.com/document/839104130/The-AKI-Guide",
+        "https://note.com/konmaosan/n/n2a62ef155df9"
+      ]
+    },
+    "walk_forward": {
+      "name": "Walk forward briefly",
+      "category": "system",
+      "input": {
+        "sf": "walk(6)",
+        "mapped": "walk(6)"
+      },
+      "startup": null,
+      "damage": [],
+      "hit": {
+        "state": "none",
+        "advantage": null
+      },
+      "cancel": {},
+      "meter_cost": {
+        "drive": 0,
+        "super": 0
+      },
+      "properties": [],
+      "sources": [
+        "https://www.scribd.com/document/839104130/The-AKI-Guide",
+        "https://note.com/konmaosan/n/n2a62ef155df9"
+      ]
+    },
+    "doc_prima_trials_aki_advanced_5_11": {
+      "name": "Tainted Talons",
+      "category": "super",
+      "super_level": 2,
+      "input": {
+        "sf": "214214LP"
+      },
+      "startup": 7,
+      "damage": [
+        2600
+      ],
+      "hit": {
+        "state": "knockdown",
+        "advantage": 30,
+        "advantage_min": 30,
+        "advantage_max": 30
+      },
+      "block": {
+        "advantage": -19,
+        "advantage_min": -19,
+        "advantage_max": -19
+      },
+      "cancel": {
+        "chain": false,
+        "special": false,
+        "super": false,
+        "target_combo": false
+      },
+      "properties": [
+        "armor_break",
+        "creates_poison_pool"
+      ],
+      "documented_import": true,
+      "search_eligible": false,
+      "search_exclusions": [
+        "Published recipe step only."
+      ]
+    },
+    "doc_sf6lab_aki_006_1_0": {
+      "name": "Parry Drive Rush",
+      "category": "system",
+      "input": {
+        "sf": "DR(MP+MK,66)"
+      },
+      "startup": null,
+      "damage": [],
+      "hit": {
+        "state": "none",
+        "advantage": null
+      },
+      "cancel": {},
+      "meter_cost": {
+        "drive": 1,
+        "super": 0
+      },
+      "properties": [],
+      "sources": [
+        "https://www.scribd.com/document/839104130/The-AKI-Guide",
+        "https://note.com/konmaosan/n/n2a62ef155df9"
+      ],
+      "documented_import": true,
+      "search_eligible": false,
+      "search_exclusions": [
+        "Published recipe step only."
+      ]
+    },
+    "doc_sf6lab_aki_007_1_0": {
+      "name": "Parry Drive Rush",
+      "category": "system",
+      "input": {
+        "sf": "DR(MP+MK,66)"
+      },
+      "startup": null,
+      "damage": [],
+      "hit": {
+        "state": "none",
+        "advantage": null
+      },
+      "cancel": {},
+      "meter_cost": {
+        "drive": 1,
+        "super": 0
+      },
+      "properties": [],
+      "sources": [
+        "https://www.scribd.com/document/839104130/The-AKI-Guide",
+        "https://note.com/konmaosan/n/n2a62ef155df9"
+      ],
+      "documented_import": true,
+      "search_eligible": false,
+      "search_exclusions": [
+        "Published recipe step only."
+      ]
+    },
+    "doc_sf6lab_aki_012_1_4": {
+      "name": "Parry Drive Rush",
+      "category": "system",
+      "input": {
+        "sf": "DR(MP+MK,66)"
+      },
+      "startup": null,
+      "damage": [],
+      "hit": {
+        "state": "none",
+        "advantage": null
+      },
+      "cancel": {},
+      "meter_cost": {
+        "drive": 1,
+        "super": 0
+      },
+      "properties": [],
+      "sources": [
+        "https://www.scribd.com/document/839104130/The-AKI-Guide",
+        "https://note.com/konmaosan/n/n2a62ef155df9"
+      ],
+      "documented_import": true,
+      "search_eligible": false,
+      "search_exclusions": [
+        "Published recipe step only."
+      ]
+    }
+  },
+  "documented_combos": [
+    {
+      "id": "prima_trials_aki_beginner_1",
+      "moves": [
+        "hundun"
+      ],
+      "transitions": [],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://primagames.com/tips/all-a-k-i-combos-in-street-fighter-6-sf6-listed"
+      ],
+      "source_kind": "capcom_trial_transcription",
+      "source_label": "Capcom trial transcription",
+      "source_version": "2023 transcription; current-patch trial list not verified",
+      "title": "Beginner 1",
+      "documented_import": true,
+      "notes": [
+        "Historical trial transcription; timing and trial numbering may differ in the current patch.",
+        "Match the in-game trial setup; this transcription does not specify spacing or screen position.",
+        "2023 transcription; current-patch trial list not verified"
+      ]
+    },
+    {
+      "id": "prima_trials_aki_beginner_2",
+      "moves": [
+        "qiong_qi"
+      ],
+      "transitions": [],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://primagames.com/tips/all-a-k-i-combos-in-street-fighter-6-sf6-listed"
+      ],
+      "source_kind": "capcom_trial_transcription",
+      "source_label": "Capcom trial transcription",
+      "source_version": "2023 transcription; current-patch trial list not verified",
+      "title": "Beginner 2",
+      "documented_import": true,
+      "notes": [
+        "Historical trial transcription; timing and trial numbering may differ in the current patch.",
+        "Match the in-game trial setup; this transcription does not specify spacing or screen position.",
+        "2023 transcription; current-patch trial list not verified"
+      ]
+    },
+    {
+      "id": "prima_trials_aki_beginner_3",
+      "moves": [
+        "j_hp",
+        "2hp"
+      ],
+      "transitions": [
+        "published_transition"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://primagames.com/tips/all-a-k-i-combos-in-street-fighter-6-sf6-listed"
+      ],
+      "source_kind": "capcom_trial_transcription",
+      "source_label": "Capcom trial transcription",
+      "source_version": "2023 transcription; current-patch trial list not verified",
+      "title": "Beginner 3",
+      "documented_import": true,
+      "notes": [
+        "Historical trial transcription; timing and trial numbering may differ in the current patch.",
+        "Match the in-game trial setup; this transcription does not specify spacing or screen position.",
+        "2023 transcription; current-patch trial list not verified"
+      ]
+    },
+    {
+      "id": "prima_trials_aki_beginner_4",
+      "moves": [
+        "2mp",
+        "light_serpent_lash"
+      ],
+      "transitions": [
+        "cancel"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://primagames.com/tips/all-a-k-i-combos-in-street-fighter-6-sf6-listed"
+      ],
+      "source_kind": "capcom_trial_transcription",
+      "source_label": "Capcom trial transcription",
+      "source_version": "2023 transcription; current-patch trial list not verified",
+      "title": "Beginner 4",
+      "documented_import": true,
+      "notes": [
+        "Historical trial transcription; timing and trial numbering may differ in the current patch.",
+        "Match the in-game trial setup; this transcription does not specify spacing or screen position.",
+        "2023 transcription; current-patch trial list not verified"
+      ]
+    },
+    {
+      "id": "prima_trials_aki_beginner_5",
+      "moves": [
+        "5mp",
+        "nightshade_pulse",
+        "nightshade_chaser"
+      ],
+      "transitions": [
+        "cancel",
+        "published_transition"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://primagames.com/tips/all-a-k-i-combos-in-street-fighter-6-sf6-listed"
+      ],
+      "source_kind": "capcom_trial_transcription",
+      "source_label": "Capcom trial transcription",
+      "source_version": "2023 transcription; current-patch trial list not verified",
+      "title": "Beginner 5",
+      "documented_import": true,
+      "notes": [
+        "Historical trial transcription; timing and trial numbering may differ in the current patch.",
+        "Match the in-game trial setup; this transcription does not specify spacing or screen position.",
+        "2023 transcription; current-patch trial list not verified"
+      ]
+    },
+    {
+      "id": "prima_trials_aki_beginner_6",
+      "moves": [
+        "hundun",
+        "orchid_wreath"
+      ],
+      "transitions": [
+        "cancel"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://primagames.com/tips/all-a-k-i-combos-in-street-fighter-6-sf6-listed"
+      ],
+      "source_kind": "capcom_trial_transcription",
+      "source_label": "Capcom trial transcription",
+      "source_version": "2023 transcription; current-patch trial list not verified",
+      "title": "Beginner 6",
+      "documented_import": true,
+      "notes": [
+        "Historical trial transcription; timing and trial numbering may differ in the current patch.",
+        "Match the in-game trial setup; this transcription does not specify spacing or screen position.",
+        "2023 transcription; current-patch trial list not verified"
+      ]
+    },
+    {
+      "id": "prima_trials_aki_intermediate_1",
+      "moves": [
+        "j_hp",
+        "5mp",
+        "heavy_serpent_lash"
+      ],
+      "transitions": [
+        "link",
+        "cancel"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://primagames.com/tips/all-a-k-i-combos-in-street-fighter-6-sf6-listed"
+      ],
+      "source_kind": "capcom_trial_transcription",
+      "source_label": "Capcom trial transcription",
+      "source_version": "2023 transcription; current-patch trial list not verified",
+      "title": "Intermediate 1",
+      "documented_import": true,
+      "notes": [
+        "Historical trial transcription; timing and trial numbering may differ in the current patch.",
+        "Match the in-game trial setup; this transcription does not specify spacing or screen position.",
+        "2023 transcription; current-patch trial list not verified"
+      ]
+    },
+    {
+      "id": "prima_trials_aki_intermediate_2",
+      "moves": [
+        "2lk",
+        "2lp",
+        "orchid_wreath"
+      ],
+      "transitions": [
+        "chain",
+        "cancel"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://primagames.com/tips/all-a-k-i-combos-in-street-fighter-6-sf6-listed"
+      ],
+      "source_kind": "capcom_trial_transcription",
+      "source_label": "Capcom trial transcription",
+      "source_version": "2023 transcription; current-patch trial list not verified",
+      "title": "Intermediate 2",
+      "documented_import": true,
+      "notes": [
+        "Historical trial transcription; timing and trial numbering may differ in the current patch.",
+        "Match the in-game trial setup; this transcription does not specify spacing or screen position.",
+        "2023 transcription; current-patch trial list not verified"
+      ]
+    },
+    {
+      "id": "prima_trials_aki_intermediate_3",
+      "moves": [
+        "5mk",
+        "5mp",
+        "heavy_serpent_lash"
+      ],
+      "transitions": [
+        "link",
+        "cancel"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://primagames.com/tips/all-a-k-i-combos-in-street-fighter-6-sf6-listed"
+      ],
+      "source_kind": "capcom_trial_transcription",
+      "source_label": "Capcom trial transcription",
+      "source_version": "2023 transcription; current-patch trial list not verified",
+      "title": "Intermediate 3",
+      "documented_import": true,
+      "notes": [
+        "Historical trial transcription; timing and trial numbering may differ in the current patch.",
+        "Match the in-game trial setup; this transcription does not specify spacing or screen position.",
+        "2023 transcription; current-patch trial list not verified"
+      ]
+    },
+    {
+      "id": "prima_trials_aki_intermediate_4",
+      "moves": [
+        "5hk",
+        "sinister_slide",
+        "heel_strike",
+        "2lp",
+        "2lp",
+        "heavy_serpent_lash"
+      ],
+      "transitions": [
+        "published_transition",
+        "published_transition",
+        "link",
+        "chain",
+        "cancel"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://primagames.com/tips/all-a-k-i-combos-in-street-fighter-6-sf6-listed"
+      ],
+      "source_kind": "capcom_trial_transcription",
+      "source_label": "Capcom trial transcription",
+      "source_version": "2023 transcription; current-patch trial list not verified",
+      "title": "Intermediate 4",
+      "documented_import": true,
+      "notes": [
+        "Historical trial transcription; timing and trial numbering may differ in the current patch.",
+        "Match the in-game trial setup; this transcription does not specify spacing or screen position.",
+        "2023 transcription; current-patch trial list not verified"
+      ]
+    },
+    {
+      "id": "prima_trials_aki_intermediate_6",
+      "moves": [
+        "2mp",
+        "od_serpent_lash",
+        "2lp",
+        "2lp",
+        "heavy_serpent_lash",
+        "light_serpent_lash"
+      ],
+      "transitions": [
+        "cancel",
+        "link",
+        "chain",
+        "cancel",
+        "published_transition"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://primagames.com/tips/all-a-k-i-combos-in-street-fighter-6-sf6-listed"
+      ],
+      "source_kind": "capcom_trial_transcription",
+      "source_label": "Capcom trial transcription",
+      "source_version": "2023 transcription; current-patch trial list not verified",
+      "title": "Intermediate 6",
+      "documented_import": true,
+      "notes": [
+        "Historical trial transcription; timing and trial numbering may differ in the current patch.",
+        "Match the in-game trial setup; this transcription does not specify spacing or screen position.",
+        "2023 transcription; current-patch trial list not verified"
+      ]
+    },
+    {
+      "id": "prima_trials_aki_intermediate_13",
+      "moves": [
+        "drive_rush",
+        "3mp",
+        "5mp",
+        "drive_rush_cancel",
+        "5mp",
+        "5hk",
+        "sinister_slide",
+        "heel_strike",
+        "2lp",
+        "2lp",
+        "heavy_serpent_lash",
+        "sa3"
+      ],
+      "transitions": [
+        "published_transition",
+        "published_transition",
+        "published_transition",
+        "published_transition",
+        "published_transition",
+        "published_transition",
+        "published_transition",
+        "link",
+        "chain",
+        "cancel",
+        "published_transition"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://primagames.com/tips/all-a-k-i-combos-in-street-fighter-6-sf6-listed"
+      ],
+      "source_kind": "capcom_trial_transcription",
+      "source_label": "Capcom trial transcription",
+      "source_version": "2023 transcription; current-patch trial list not verified",
+      "title": "Intermediate 13",
+      "documented_import": true,
+      "notes": [
+        "Historical trial transcription; timing and trial numbering may differ in the current patch.",
+        "Match the in-game trial setup; this transcription does not specify spacing or screen position.",
+        "2023 transcription; current-patch trial list not verified"
+      ]
+    },
+    {
+      "id": "prima_trials_aki_advanced_1",
+      "moves": [
+        "5hk",
+        "od_serpent_lash",
+        "2lp",
+        "2lp",
+        "heavy_serpent_lash",
+        "drive_rush",
+        "5mp",
+        "sinister_slide",
+        "heel_strike",
+        "light_serpent_lash"
+      ],
+      "transitions": [
+        "cancel",
+        "link",
+        "chain",
+        "cancel",
+        "published_transition",
+        "published_transition",
+        "published_transition",
+        "published_transition",
+        "published_transition"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://primagames.com/tips/all-a-k-i-combos-in-street-fighter-6-sf6-listed"
+      ],
+      "source_kind": "capcom_trial_transcription",
+      "source_label": "Capcom trial transcription",
+      "source_version": "2023 transcription; current-patch trial list not verified",
+      "title": "Advanced 1",
+      "documented_import": true,
+      "notes": [
+        "Historical trial transcription; timing and trial numbering may differ in the current patch.",
+        "Match the in-game trial setup; this transcription does not specify spacing or screen position.",
+        "2023 transcription; current-patch trial list not verified"
+      ]
+    },
+    {
+      "id": "prima_trials_aki_advanced_5",
+      "moves": [
+        "2lk",
+        "2lp",
+        "drive_rush_cancel",
+        "5lp",
+        "5mp",
+        "drive_rush_cancel",
+        "5mk",
+        "5hk",
+        "sinister_slide",
+        "heel_strike",
+        "2lk",
+        "doc_prima_trials_aki_advanced_5_11"
+      ],
+      "transitions": [
+        "chain",
+        "published_transition",
+        "published_transition",
+        "published_transition",
+        "published_transition",
+        "published_transition",
+        "published_transition",
+        "published_transition",
+        "published_transition",
+        "published_transition",
+        "published_transition"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://primagames.com/tips/all-a-k-i-combos-in-street-fighter-6-sf6-listed"
+      ],
+      "source_kind": "capcom_trial_transcription",
+      "source_label": "Capcom trial transcription",
+      "source_version": "2023 transcription; current-patch trial list not verified",
+      "title": "Advanced 5",
+      "documented_import": true,
+      "notes": [
+        "Historical trial transcription; timing and trial numbering may differ in the current patch.",
+        "Match the in-game trial setup; this transcription does not specify spacing or screen position.",
+        "2023 transcription; current-patch trial list not verified"
+      ]
+    },
+    {
+      "id": "sf6lab_aki_001_1",
+      "moves": [
+        "2lp",
+        "2lp",
+        "5lk",
+        "heavy_serpent_lash"
+      ],
+      "transitions": [
+        "chain",
+        "link",
+        "cancel"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://sf6-lab.net/en/fighters/aki/combo"
+      ],
+      "source_kind": "community_guide",
+      "source_label": "Community guide",
+      "source_version": "Year 4 guide; retrieved 2026-10-07",
+      "title": "1 Basic light-attack route",
+      "documented_import": true,
+      "notes": [
+        "Close range; retain charge where required.",
+        "Year 4 guide; retrieved 2026-10-07"
+      ]
+    },
+    {
+      "id": "sf6lab_aki_002_1",
+      "moves": [
+        "2lk",
+        "2lp",
+        "2lp",
+        "heavy_serpent_lash"
+      ],
+      "transitions": [
+        "chain",
+        "chain",
+        "cancel"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://sf6-lab.net/en/fighters/aki/combo"
+      ],
+      "source_kind": "community_guide",
+      "source_label": "Community guide",
+      "source_version": "Year 4 guide; retrieved 2026-10-07",
+      "title": "1 Basic light-attack route",
+      "documented_import": true,
+      "notes": [
+        "Close range; retain charge where required.",
+        "Year 4 guide; retrieved 2026-10-07"
+      ]
+    },
+    {
+      "id": "sf6lab_aki_003_1",
+      "moves": [
+        "5mk",
+        "5mp",
+        "heavy_serpent_lash"
+      ],
+      "transitions": [
+        "link",
+        "cancel"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://sf6-lab.net/en/fighters/aki/combo"
+      ],
+      "source_kind": "community_guide",
+      "source_label": "Community guide",
+      "source_version": "Year 4 guide; retrieved 2026-10-07",
+      "title": "2. Basic st.MK route",
+      "documented_import": true,
+      "notes": [
+        "Close range; retain charge where required.",
+        "Year 4 guide; retrieved 2026-10-07"
+      ]
+    },
+    {
+      "id": "sf6lab_aki_006_1",
+      "moves": [
+        "doc_sf6lab_aki_006_1_0",
+        "2lk",
+        "5mp",
+        "heavy_serpent_lash"
+      ],
+      "transitions": [
+        "published_transition",
+        "published_transition",
+        "cancel"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://sf6-lab.net/en/fighters/aki/combo"
+      ],
+      "source_kind": "community_guide",
+      "source_label": "Community guide",
+      "source_version": "Year 4 guide; retrieved 2026-10-07",
+      "title": "5 DR low",
+      "documented_import": true,
+      "notes": [
+        "Close range; retain charge where required.",
+        "Year 4 guide; retrieved 2026-10-07"
+      ]
+    },
+    {
+      "id": "sf6lab_aki_007_1",
+      "moves": [
+        "doc_sf6lab_aki_007_1_0",
+        "3mp",
+        "5mp",
+        "heavy_serpent_lash"
+      ],
+      "transitions": [
+        "published_transition",
+        "published_transition",
+        "cancel"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://sf6-lab.net/en/fighters/aki/combo"
+      ],
+      "source_kind": "community_guide",
+      "source_label": "Community guide",
+      "source_version": "Year 4 guide; retrieved 2026-10-07",
+      "title": "6 DR overhead",
+      "documented_import": true,
+      "notes": [
+        "Close range; retain charge where required.",
+        "Year 4 guide; retrieved 2026-10-07"
+      ]
+    },
+    {
+      "id": "sf6lab_aki_009_1",
+      "moves": [
+        "5hk",
+        "heavy_cruel_fate",
+        "2lp",
+        "2lp",
+        "5lk",
+        "heavy_serpent_lash"
+      ],
+      "transitions": [
+        "cancel",
+        "link",
+        "chain",
+        "link",
+        "cancel"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "punish_counter"
+      },
+      "sources": [
+        "https://sf6-lab.net/en/fighters/aki/combo"
+      ],
+      "source_kind": "community_guide",
+      "source_label": "Community guide",
+      "source_version": "Year 4 guide; retrieved 2026-10-07",
+      "title": "8 st.HK Punish Counter",
+      "documented_import": true,
+      "notes": [
+        "Close range; retain charge where required.",
+        "Year 4 guide; retrieved 2026-10-07"
+      ]
+    },
+    {
+      "id": "sf6lab_aki_010_1",
+      "moves": [
+        "2hk",
+        "medium_serpent_lash"
+      ],
+      "transitions": [
+        "published_transition"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "punish_counter"
+      },
+      "sources": [
+        "https://sf6-lab.net/en/fighters/aki/combo"
+      ],
+      "source_kind": "community_guide",
+      "source_label": "Community guide",
+      "source_version": "Year 4 guide; retrieved 2026-10-07",
+      "title": "9 cr.HK Punish Counter",
+      "documented_import": true,
+      "notes": [
+        "Close range; retain charge where required.",
+        "Year 4 guide; retrieved 2026-10-07"
+      ]
+    },
+    {
+      "id": "sf6lab_aki_012_1",
+      "moves": [
+        "2lp",
+        "2lp",
+        "5lk",
+        "heavy_serpent_lash",
+        "doc_sf6lab_aki_012_1_4",
+        "2mp",
+        "heavy_serpent_lash"
+      ],
+      "transitions": [
+        "chain",
+        "link",
+        "cancel",
+        "published_transition",
+        "published_transition",
+        "cancel"
+      ],
+      "conditions": {
+        "position": "any",
+        "opponent_state": "grounded",
+        "opponent_poisoned": true,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://sf6-lab.net/en/fighters/aki/combo"
+      ],
+      "source_kind": "community_guide",
+      "source_label": "Community guide",
+      "source_version": "Year 4 guide; retrieved 2026-10-07",
+      "title": "10. H Serpent Lash: Toxic Blossom against a poisoned opponent",
+      "documented_import": true,
+      "notes": [
+        "Close range; retain charge where required.",
+        "Year 4 guide; retrieved 2026-10-07"
+      ]
+    },
+    {
+      "id": "hk_stance_heel_lights",
+      "moves": [
+        "5hk",
+        "sinister_slide",
+        "heel_strike",
+        "2lp",
+        "2lp",
+        "5lk",
+        "heavy_serpent_lash"
+      ],
+      "transitions": [
+        "stance_cancel",
+        "stance_followup",
+        "documented_link",
+        "chain",
+        "documented_link",
+        "documented_cancel"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://note.com/akino_outi/n/n7594fdffc1dc"
+      ],
+      "notes": [
+        "Close range; the second crouching LP is documented only at point-blank range."
+      ]
+    },
+    {
+      "id": "hk_poison_walk_conversion",
+      "moves": [
+        "5hk",
+        "sinister_slide",
+        "heel_strike",
+        "5lk",
+        "medium_serpent_lash",
+        "walk_forward",
+        "5mp",
+        "heavy_serpent_lash"
+      ],
+      "transitions": [
+        "stance_cancel",
+        "stance_followup",
+        "documented_link",
+        "documented_cancel",
+        "crumple",
+        "position_adjustment",
+        "documented_cancel"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "grounded",
+        "opponent_poisoned": true,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://note.com/akino_outi/n/n7594fdffc1dc"
+      ],
+      "notes": [
+        "Opponent must be standing when medium Serpent Lash connects; walk forward briefly during the conversion."
+      ]
+    },
+    {
+      "id": "hk_poison_corner_conversion",
+      "moves": [
+        "5hk",
+        "sinister_slide",
+        "heel_strike",
+        "5lk",
+        "medium_serpent_lash",
+        "5hk",
+        "orchid_wreath",
+        "drive_rush",
+        "5hk",
+        "sinister_slide",
+        "venomous_fang"
+      ],
+      "transitions": [
+        "stance_cancel",
+        "stance_followup",
+        "documented_link",
+        "documented_cancel",
+        "crumple",
+        "documented_cancel",
+        "juggle",
+        "drive_rush_attack",
+        "stance_cancel",
+        "stance_followup"
+      ],
+      "conditions": {
+        "position": "corner",
+        "opponent_state": "grounded",
+        "opponent_poisoned": true,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://note.com/akino_outi/n/n7594fdffc1dc"
+      ],
+      "notes": [
+        "Corner route; opponent standing at the medium Serpent Lash hit; juggle height/timing matter."
+      ]
+    },
+    {
+      "id": "mk_counter_poison_conversion",
+      "moves": [
+        "5mk",
+        "2mp",
+        "od_serpent_lash",
+        "5lk",
+        "medium_serpent_lash",
+        "walk_forward",
+        "5mp",
+        "heavy_serpent_lash"
+      ],
+      "transitions": [
+        "documented_link",
+        "documented_cancel",
+        "documented_link",
+        "documented_cancel",
+        "crumple",
+        "position_adjustment",
+        "documented_cancel"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "counter"
+      },
+      "sources": [
+        "https://note.com/akino_outi/n/n7594fdffc1dc"
+      ],
+      "notes": [
+        "Opponent standing at the medium Serpent Lash hit; slight forward walk required."
+      ]
+    },
+    {
+      "id": "hk_punish_cruel_lights",
+      "moves": [
+        "5hk",
+        "heavy_cruel_fate",
+        "2lp",
+        "2lp",
+        "5lk",
+        "heavy_serpent_lash"
+      ],
+      "transitions": [
+        "documented_cancel",
+        "documented_link",
+        "chain",
+        "documented_link",
+        "documented_cancel"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "punish_counter"
+      },
+      "sources": [
+        "https://note.com/akino_outi/n/n7594fdffc1dc"
+      ],
+      "notes": [
+        "Close range."
+      ]
+    },
+    {
+      "id": "mp_counter_hundun",
+      "moves": [
+        "5mp",
+        "hundun",
+        "heavy_serpent_lash"
+      ],
+      "transitions": [
+        "documented_link",
+        "documented_cancel"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "counter"
+      },
+      "sources": [
+        "https://note.com/akino_outi/n/n7594fdffc1dc"
+      ],
+      "notes": []
+    },
+    {
+      "id": "od_pulse_rush_sa1",
+      "moves": [
+        "od_nightshade_pulse",
+        "drive_rush",
+        "5mp",
+        "medium_serpent_lash",
+        "drive_rush",
+        "5hk",
+        "od_cruel_fate",
+        "sa1"
+      ],
+      "transitions": [
+        "juggle",
+        "drive_rush_attack",
+        "documented_cancel",
+        "juggle",
+        "drive_rush_attack",
+        "documented_cancel",
+        "juggle"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://note.com/akino_outi/n/n7594fdffc1dc"
+      ],
+      "notes": [
+        "Cannot start at point-blank range. Opponent is launched by OD Pulse; Drive Rush and juggle timing are required. Super follows the aerial/non-hitgrab Cruel Fate route."
+      ]
+    },
+    {
+      "id": "od_pulse_rush_sa2",
+      "moves": [
+        "od_nightshade_pulse",
+        "drive_rush",
+        "5mp",
+        "medium_serpent_lash",
+        "drive_rush",
+        "5hk",
+        "od_cruel_fate",
+        "sa2"
+      ],
+      "transitions": [
+        "juggle",
+        "drive_rush_attack",
+        "documented_cancel",
+        "juggle",
+        "drive_rush_attack",
+        "documented_cancel",
+        "juggle"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://note.com/akino_outi/n/n7594fdffc1dc"
+      ],
+      "notes": [
+        "Cannot start at point-blank range. Opponent is launched by OD Pulse; Drive Rush and juggle timing are required. Super follows the aerial/non-hitgrab Cruel Fate route."
+      ]
+    },
+    {
+      "id": "od_pulse_rush_sa3",
+      "moves": [
+        "od_nightshade_pulse",
+        "drive_rush",
+        "5mp",
+        "medium_serpent_lash",
+        "drive_rush",
+        "5hk",
+        "od_cruel_fate",
+        "sa3"
+      ],
+      "transitions": [
+        "juggle",
+        "drive_rush_attack",
+        "documented_cancel",
+        "juggle",
+        "drive_rush_attack",
+        "documented_cancel",
+        "juggle"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://note.com/akino_outi/n/n7594fdffc1dc"
+      ],
+      "notes": [
+        "Cannot start at point-blank range. Opponent is launched by OD Pulse; Drive Rush and juggle timing are required. Super follows the aerial/non-hitgrab Cruel Fate route."
+      ]
+    },
+    {
+      "id": "light_punch_drive_rush_route",
+      "moves": [
+        "2lp",
+        "drive_rush_cancel",
+        "5lp",
+        "2mp",
+        "drive_rush_cancel",
+        "5mk",
+        "5hk",
+        "sinister_slide",
+        "heel_strike",
+        "2lp",
+        "2lp",
+        "heavy_serpent_lash"
+      ],
+      "transitions": [
+        "drive_rush_cancel",
+        "drive_rush_attack",
+        "documented_link",
+        "drive_rush_cancel",
+        "drive_rush_attack",
+        "documented_link",
+        "stance_cancel",
+        "stance_followup",
+        "documented_link",
+        "chain",
+        "documented_cancel"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://note.com/konmaosan/n/n2a62ef155df9"
+      ],
+      "notes": [
+        "Two Drive Rush cancels cost six Drive bars. Close-range crouching light punches."
+      ]
+    },
+    {
+      "id": "heavy_blossom_light_lash",
+      "moves": [
+        "heavy_serpent_lash",
+        "light_serpent_lash"
+      ],
+      "transitions": [
+        "juggle"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "grounded",
+        "opponent_poisoned": true,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://note.com/konmaosan/n/n2a62ef155df9"
+      ],
+      "notes": []
+    },
+    {
+      "id": "hk_punish_stance_corner",
+      "moves": [
+        "5hk",
+        "sinister_slide",
+        "venomous_fang",
+        "5hk",
+        "orchid_wreath"
+      ],
+      "transitions": [
+        "stance_cancel",
+        "stance_followup",
+        "crumple",
+        "documented_cancel"
+      ],
+      "conditions": {
+        "position": "corner",
+        "opponent_state": "grounded",
+        "opponent_poisoned": true,
+        "hit_type": "punish_counter"
+      },
+      "sources": [
+        "https://note.com/konmaosan/n/n2a62ef155df9"
+      ],
+      "notes": []
+    },
+    {
+      "id": "lights_heavy_lash_sa3",
+      "moves": [
+        "2lp",
+        "2lp",
+        "heavy_serpent_lash",
+        "sa3"
+      ],
+      "transitions": [
+        "chain",
+        "documented_cancel",
+        "documented_cancel"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://www.scribd.com/document/839104130/The-AKI-Guide"
+      ],
+      "notes": []
+    },
+    {
+      "id": "lights_pulse_chaser_sa3",
+      "moves": [
+        "2lp",
+        "5lk",
+        "nightshade_pulse",
+        "nightshade_chaser",
+        "sa3"
+      ],
+      "transitions": [
+        "documented_link",
+        "documented_cancel",
+        "followup",
+        "documented_cancel"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://www.scribd.com/document/839104130/The-AKI-Guide"
+      ],
+      "notes": [
+        "Close-range fireball hit into its follow-up; cancel the Chaser into SA3."
+      ]
+    },
+    {
+      "id": "od_pulse_chaser_sa2",
+      "moves": [
+        "od_nightshade_pulse",
+        "od_nightshade_chaser",
+        "sa2"
+      ],
+      "transitions": [
+        "followup",
+        "documented_cancel"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://www.scribd.com/document/839104130/The-AKI-Guide"
+      ],
+      "notes": [
+        "Dedicated connecting follow-up; cancel at the OD Pulse follow-up window. Projectile timing/spacing must be checked."
+      ]
+    },
+    {
+      "id": "od_pulse_chaser_sa3",
+      "moves": [
+        "od_nightshade_pulse",
+        "od_nightshade_chaser",
+        "sa3"
+      ],
+      "transitions": [
+        "followup",
+        "documented_cancel"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "grounded",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://www.scribd.com/document/839104130/The-AKI-Guide"
+      ],
+      "notes": [
+        "Dedicated connecting follow-up; cancel at the OD Pulse follow-up window. Projectile timing/spacing must be checked."
+      ]
+    },
+    {
+      "id": "air_jump_mp_sa1",
+      "moves": [
+        "j_mp",
+        "sa1"
+      ],
+      "transitions": [
+        "juggle"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "airborne",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://note.com/akino_outi/n/n7594fdffc1dc"
+      ],
+      "notes": [
+        "Air-to-air jump MP must connect near the top of the jump; land before the super."
+      ]
+    },
+    {
+      "id": "air_jump_mp_sa2",
+      "moves": [
+        "j_mp",
+        "sa2"
+      ],
+      "transitions": [
+        "juggle"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "airborne",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://note.com/akino_outi/n/n7594fdffc1dc"
+      ],
+      "notes": [
+        "Air-to-air jump MP must connect near the top of the jump; land before the super."
+      ]
+    },
+    {
+      "id": "air_jump_mp_sa3",
+      "moves": [
+        "j_mp",
+        "sa3"
+      ],
+      "transitions": [
+        "juggle"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "airborne",
+        "opponent_poisoned": false,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://note.com/akino_outi/n/n7594fdffc1dc"
+      ],
+      "notes": [
+        "Air-to-air jump MP must connect near the top of the jump; land before the super."
+      ]
+    },
+    {
+      "id": "air_heavy_blossom_medium",
+      "moves": [
+        "heavy_serpent_lash",
+        "medium_serpent_lash"
+      ],
+      "transitions": [
+        "juggle"
+      ],
+      "conditions": {
+        "position": "midscreen",
+        "opponent_state": "airborne",
+        "opponent_poisoned": true,
+        "hit_type": "normal"
+      },
+      "sources": [
+        "https://note.com/akino_outi/n/n7594fdffc1dc"
+      ],
+      "notes": [
+        "Poisoned opponent directly above A.K.I.; first hit must connect high enough."
+      ]
+    }
+  ],
+  "documented_coverage": {
+    "complete": false,
+    "official_trials_complete": false,
+    "reviewed_entries": 12,
+    "imported_recipes": 22,
+    "unresolved_entries": [
+      {
+        "entry": 4,
+        "reason": "Unresolved or ambiguous move reference (0 matches)"
+      },
+      {
+        "entry": 5,
+        "reason": "Unresolved or ambiguous move reference (0 matches)"
+      },
+      {
+        "entry": 8,
+        "reason": "Unresolved or ambiguous move reference (0 matches)"
+      },
+      {
+        "entry": 11,
+        "reason": "Unresolved or ambiguous move reference (0 matches)"
+      }
+    ],
+    "scope": "Essential starter routes; other guide sections and full official trials remain incomplete.",
+    "imported_trial_recipes": 14,
+    "transcribed_trials_reviewed": 31,
+    "unimported_trials_reason": "Generic strength, charge/poison setup, blocked DI wall states, or transcription ambiguity needs review."
+  }
+}

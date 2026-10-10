@@ -13,9 +13,13 @@ the impossible strings this project previously produced.
 The additional 30 characters come from the
 [SF6 Sensei generated dataset](https://github.com/RyoSogawa/sf6-sensei/tree/main/packages/data/src/generated),
 derived from SuperCombo Wiki under CC-BY-SA-4.0. Source snapshots are bundled in
-`data/sf6-sensei/`. [DATA_NOTICE.md](DATA_NOTICE.md) records attribution and
-conversion changes. `python3 import_roster.py` rebuilds imported character
-records without changing the curated A.K.I. data. It is an offline conversion,
+`data/sf6-sensei/`. The same directory includes `aki.json`, extracted from the
+project's existing reviewed A.K.I. data. Its moves are a dictionary in the app's
+schema, while the upstream snapshots have raw move arrays.
+[DATA_NOTICE.md](DATA_NOTICE.md) records attribution and conversion changes.
+`python3 import_roster.py` loads `aki.json` directly and converts the other
+character snapshots into the shared `sf_combo_finder/characters.json` database.
+It is an offline conversion,
 not a patch updater; replace the snapshots with newer source JSON to update.
 
 Every source move is retained, including unsupported variants, with
@@ -81,8 +85,11 @@ substitute guessed chains for missing recipes.
 
 ## Adding a complete route
 
-Add missing attacks/actions to `characters.aki.moves`, then append a sourced
-entry to `characters.aki.documented_combos`. Use move IDs, not display strings:
+In `data/sf6-sensei/aki.json`, add missing attacks/actions to `moves`, then
+append a sourced entry to `documented_combos`. Run `python3 import_roster.py`
+to rebuild the shared app database. Recipes marked `documented_import` are
+rebuilt from `data/documented_routes.json`; edit that snapshot for those routes.
+Use move IDs, not display strings:
 
 ```json
 {

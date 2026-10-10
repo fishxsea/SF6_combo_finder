@@ -4,6 +4,8 @@ __pycache__/
 .tui_preferences.json
 .combo_library.json
 .combo_library.json.*
+custom_combos.json
+custom_combos.json.*
 .idea/
 .DS_Store
 .env

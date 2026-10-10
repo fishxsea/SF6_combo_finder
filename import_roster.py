@@ -1,4 +1,4 @@
-"""Convert the bundled SF6 Sensei frame-data snapshot into our move schema."""
+"""Compile reviewed A.K.I. data and convert the bundled SF6 Sensei snapshots."""
 import argparse
 from copy import deepcopy
 import json
@@ -259,8 +259,14 @@ def import_roster(source_dir=SOURCE_DIR, data_path=DATA_PATH):
         with path.open(encoding='utf-8') as source:
             character = json.load(source)
         if character['id'] == 'aki':
-            continue  # Retain the separately reviewed A.K.I. moves and recipes.
-        data['characters'][character['id']] = convert_character(character, levels[character['id']])
+            # A.K.I. is already in the reviewed app schema, including poison
+            # variants and explicit recipes; it does not need raw conversion.
+            if not isinstance(character.get('moves'), dict):
+                raise ValueError('aki.json must contain the reviewed A.K.I. move dictionary')
+            data['characters']['aki'] = {key: deepcopy(value) for key, value in character.items()
+                                       if key != 'id'}
+        else:
+            data['characters'][character['id']] = convert_character(character, levels[character['id']])
     data['game']['roster_reviewed_on'] = REVIEWED_ON
     data['game']['roster_source'] = SOURCE_BASE
     data['game']['roster_count'] = len(data['characters'])
@@ -276,7 +282,7 @@ def import_roster(source_dir=SOURCE_DIR, data_path=DATA_PATH):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source-dir', type=Path, default=SOURCE_DIR, help='Directory of source snapshots')
-    parser.add_argument('--data', type=Path, default=DATA_PATH, help='Destination characters.json; preserves A.K.I.')
+    parser.add_argument('--data', type=Path, default=DATA_PATH, help='Destination characters.json')
     args = parser.parse_args()
     data = import_roster(args.source_dir, args.data)
     print(f"Imported roster: {len(data['characters'])} characters.")

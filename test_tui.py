@@ -21,7 +21,8 @@ from sf_combo_finder.tui_themes import PALETTES, load_theme
 HAS_TEXTUAL = importlib.util.find_spec('textual') is not None
 if HAS_TEXTUAL:
     from sf_combo_finder.combo_tui import ComboFinderApp, SearchCompleted
-    from textual.widgets import Checkbox, DataTable, Input, Select, Static
+    from sf_combo_finder.tui_slider import IntegerSlider
+    from textual.widgets import Button, Checkbox, DataTable, Input, Select, Static
 
 
 class BrowserSearchTests(unittest.TestCase):
@@ -150,6 +151,26 @@ class BrowserSearchTests(unittest.TestCase):
                         for _, c in rows}
             self.assertEqual(routes(actual), routes(expected.rows))
 
+    def test_cache_searches_only_the_selected_character_and_exploration_options(self):
+        library = ComboLibrary(None)
+        for optimistic, explore, maximum in ((False, False, 7), (True, False, 3),
+                                             (False, True, 3), (True, True, 3)):
+            with self.subTest(optimistic=optimistic, explore=explore):
+                settings = SearchSettings(character='aki', min_length=2, max_length=maximum,
+                                          optimistic_links=optimistic, explore_light_chains=explore)
+                expected = ComboFinder('aki', 2, maximum, optimistic_links=optimistic,
+                                       explore_light_chains=explore).get_combo()
+                with patch('sf_combo_finder.tui_search.ComboFinder', wraps=ComboFinder) as finders:
+                    result = search_route_pool(settings, library=library)
+                self.assertEqual(finders.call_count, 1)
+                self.assertEqual(finders.call_args.args[0], 'aki')
+                self.assertEqual(finders.call_args.kwargs['optimistic_links'], optimistic)
+                self.assertEqual(finders.call_args.kwargs['explore_light_chains'], explore)
+                self.assertEqual(result.total, len(expected))
+                actual = filter_route_pool(result.route_pool, settings, library)
+                self.assertEqual([c for _, c in actual], expected)
+                self.assertTrue(all(f.character == 'aki' for f, _ in actual))
+
     def test_cli_prefills_browser_filters(self):
         fake_app = unittest.mock.MagicMock()
         module = SimpleNamespace(ComboFinderApp=fake_app)
@@ -177,6 +198,92 @@ class BrowserSearchTests(unittest.TestCase):
 
 @unittest.skipUnless(HAS_TEXTUAL, 'Install requirements.txt to run Textual interaction tests')
 class BrowserInteractionTests(unittest.IsolatedAsyncioTestCase):
+    async def test_numeric_sliders_follow_typing_and_preserve_blank_or_invalid_edits(self):
+        app = ComboFinderApp(preferences_path=None, library_path=None)
+        with patch('sf_combo_finder.combo_tui.search_route_pool') as search:
+            async with app.run_test(size=(140, 50)) as pilot:
+                await pilot.pause()
+                for field_id, initial, value in [('min-length', 3, 4),
+                                                  ('max-length', 5, 30),
+                                                  ('random-count', 0, 250)]:
+                    slider = app.query_one(f'#{field_id}-slider', IntegerSlider)
+                    field = app.query_one(f'#{field_id}', Input)
+                    self.assertEqual(slider.value, initial)
+                    field.value = str(value)
+                    await pilot.pause()
+                    self.assertEqual(slider.value, value)
+                    self.assertGreaterEqual(slider.maximum, value)
+                    slider.focus()
+                    await pilot.press('left')
+                    self.assertEqual(field.value, str(value - 1))
+                field = app.query_one('#random-count', Input)
+                slider = app.query_one('#random-count-slider', IntegerSlider)
+                field.value = ''
+                await pilot.pause()
+                self.assertEqual(slider.value, 0)
+                self.assertIsNone(app.read_settings().sample_size)
+                for invalid in ('0', '-1'):
+                    field.value = invalid
+                    await pilot.pause()
+                    self.assertEqual(field.value, invalid)
+                    self.assertEqual(app.read_settings().sample_size, int(invalid))
+                slider.focus()
+                await pilot.press('home')
+                self.assertEqual(field.value, '')
+                self.assertIsNone(app.read_settings().sample_size)
+                self.assertEqual(app.generation, 0)
+                search.assert_not_called()
+
+    async def test_length_sliders_keep_range_in_order_and_support_keyboard_endpoints(self):
+        app = ComboFinderApp(preferences_path=None, library_path=None)
+        async with app.run_test(size=(140, 50)) as pilot:
+            minimum = app.query_one('#min-length-slider', IntegerSlider)
+            maximum = app.query_one('#max-length-slider', IntegerSlider)
+            minimum.focus()
+            await pilot.press('end')
+            self.assertEqual(app.read_settings().min_length, 20)
+            self.assertEqual(app.read_settings().max_length, 20)
+            self.assertEqual(maximum.value, 20)
+            maximum.focus()
+            await pilot.press('home')
+            self.assertEqual(app.read_settings().min_length, 1)
+            self.assertEqual(app.read_settings().max_length, 1)
+            self.assertEqual(minimum.value, 1)
+            await pilot.press('right', 'up')
+            self.assertEqual(app.read_settings().max_length, 3)
+
+    async def test_slider_mouse_drag_and_all_position_apply_on_search(self):
+        app = ComboFinderApp(settings=SearchSettings(documented_only=True, max_length=8),
+                             preferences_path=None, library_path=None)
+        async with app.run_test(size=(100, 32)) as pilot:
+            await pilot.press('ctrl+b')
+            slider = app.query_one('#random-count-slider', IntegerSlider)
+            await pilot.pause()
+            start = slider.gutter.left
+            end = start + slider.content_size.width - 1
+            self.assertGreater(end, start)
+            await pilot.mouse_down(slider, offset=(start, 0))
+            await pilot.hover(slider, offset=(end, 0))
+            await pilot.mouse_up(slider, offset=(end, 0))
+            self.assertEqual(app.read_settings().sample_size, 100)
+            self.assertFalse(slider.dragging)
+            self.assertIsNone(app.mouse_captured)
+            self.assertIsNone(app.search_worker)
+            slider.focus()
+            await pilot.press('home', 'right', 'right', 'right')
+            self.assertEqual(app.read_settings().sample_size, 3)
+            await pilot.click('#filter-search')
+            await self.finish(app, pilot)
+            self.assertEqual(app.settings.sample_size, 3)
+            self.assertEqual(len(app.rows), 3)
+            await pilot.press('ctrl+b')
+            await pilot.click(slider, offset=(start, 0))
+            self.assertEqual(app.query_one('#random-count', Input).value, '')
+            await pilot.click('#filter-search')
+            await self.finish(app, pilot)
+            self.assertIsNone(app.settings.sample_size)
+            self.assertEqual(len(app.rows), app.match_count)
+
     async def test_poison_badge_is_in_table_and_details_with_checkbox_on_or_off(self):
         app = ComboFinderApp(settings=SearchSettings(character='aki'),
                              preferences_path=None, library_path=None)
@@ -465,6 +572,53 @@ class BrowserInteractionTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(all(finder.moves[key]['category'] != 'jump_normal'
                                 for finder, combo in app.rows for key in combo['moves']))
 
+    async def test_aki_jump_filter_preserves_random_count_and_restores_full_match_total(self):
+        settings = SearchSettings(character='aki', min_length=4, max_length=7,
+                                  max_difficulty='medium')
+        baseline = search_combos(settings).total
+        grounded = search_combos(replace(settings, no_jumping=True)).total
+        app = ComboFinderApp(settings=settings, preferences_path=None, library_path=None)
+        async with app.run_test(size=(140, 60)) as pilot:
+            await self.search(app, pilot, sample_size=None)
+            self.assertEqual(app.match_count, baseline)
+            self.assertEqual(len(app.rows), baseline)
+            slider = app.query_one('#random-count-slider', IntegerSlider)
+            slider.focus()
+            await pilot.press(*(['right'] * 25))
+            self.assertEqual(app.read_settings().sample_size, 25)
+            # Selecting a count then toggling a live route filter samples the
+            # full cached pool rather than counting only the previous sample.
+            jumping = app.query_one('#no-jumping', Checkbox)
+            jumping.scroll_visible(animate=False)
+            await pilot.pause()
+            with patch('sf_combo_finder.combo_tui.search_route_pool') as search:
+                for enabled, expected in ((True, grounded), (False, baseline),
+                                          (True, grounded), (False, baseline)):
+                    self.assertTrue(await pilot.click('#no-jumping', offset=(2, 0)))
+                    await self.finish(app, pilot)
+                    self.assertEqual(app.settings.no_jumping, enabled)
+                    self.assertEqual(app.settings.sample_size, 25)
+                    self.assertEqual(app.query_one('#random-count', Input).value, '25')
+                    self.assertEqual(slider.value, 25)
+                    self.assertEqual(app.match_count, expected)
+                    self.assertEqual(len(app.rows), min(25, expected))
+                    if enabled:
+                        self.assertTrue(all(finder.moves[key]['category'] != 'jump_normal'
+                                            for finder, combo in app.rows for key in combo['moves']))
+                search.assert_not_called()
+            # All returns the complete pool when jumping is enabled or disabled.
+            slider.focus()
+            await pilot.press('home')
+            jumping.scroll_visible(animate=False)
+            await pilot.pause()
+            for enabled, expected in ((True, grounded), (False, baseline)):
+                await pilot.click('#no-jumping', offset=(2, 0))
+                await self.finish(app, pilot)
+                self.assertEqual(app.settings.no_jumping, enabled)
+                self.assertIsNone(app.settings.sample_size)
+                self.assertEqual(len(app.rows), expected)
+                self.assertEqual(app.match_count, expected)
+
     async def test_invalid_filters_then_recovery(self):
         app = ComboFinderApp(settings=SearchSettings(documented_only=True))
         async with app.run_test(size=(120, 36)) as pilot:
@@ -535,6 +689,73 @@ class BrowserInteractionTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(search.call_count, 2)
                 self.assertTrue(all(c['evidence']['kind'] == 'published_recipe' for _, c in app.rows))
 
+    async def test_exploration_options_wait_for_search_from_either_button(self):
+        app = ComboFinderApp(settings=SearchSettings(character='aki', min_length=2, max_length=3),
+                             preferences_path=None, library_path=None)
+        with patch('sf_combo_finder.combo_tui.search_route_pool', wraps=search_route_pool) as search:
+            async with app.run_test(size=(140, 42)) as pilot:
+                button = app.query_one('#filter-search', Button)
+                self.assertLess(button.region.y, app.query_one('#character').region.y)
+                self.assertTrue(await pilot.click('#filter-search'))
+                await self.finish(app, pilot)
+                self.assertTrue(app.rows)
+
+                for optimistic, explore in ((True, False), (False, True), (True, True), (False, False)):
+                    call_count, generation, previous = search.call_count, app.generation, list(app.rows)
+                    app.query_one('#optimistic', Checkbox).value = optimistic
+                    app.query_one('#explore', Checkbox).value = explore
+                    await pilot.pause()
+                    self.assertEqual(search.call_count, call_count)
+                    self.assertEqual(app.generation, generation)
+                    self.assertEqual(app.rows, previous)
+                    self.assertIn('press Search to apply', str(app.query_one('#status', Static).render()))
+
+                    # Alternate buttons; both must apply the selected mode.
+                    selector = '#filter-search' if optimistic != explore else '#search'
+                    app.query_one(selector, Button).scroll_visible(animate=False)
+                    await pilot.pause()
+                    self.assertTrue(await pilot.click(selector))
+                    await self.finish(app, pilot)
+                    self.assertEqual(app.settings.optimistic_links, optimistic)
+                    self.assertEqual(app.settings.explore_light_chains, explore)
+                    calls = search.call_args_list[call_count:]
+                    # A.K.I.'s alternate poison state must use the same mode.
+                    self.assertTrue(calls)
+                    for call in calls:
+                        self.assertEqual(call.args[0].optimistic_links, optimistic)
+                        self.assertEqual(call.args[0].explore_light_chains, explore)
+                    for finder, _ in app.rows:
+                        self.assertEqual(finder.optimistic_links, optimistic)
+                        self.assertEqual(finder.explore_light_chains, explore)
+
+    async def test_live_filters_and_shuffle_do_not_apply_pending_exploration(self):
+        app = ComboFinderApp(settings=SearchSettings(character='ryu', min_length=2, max_length=3),
+                             preferences_path=None, library_path=None)
+        with patch('sf_combo_finder.combo_tui.search_route_pool', wraps=search_route_pool) as search:
+            async with app.run_test(size=(140, 42)) as pilot:
+                await self.search(app, pilot)
+                self.assertEqual(search.call_count, 1)
+                app.query_one('#optimistic', Checkbox).value = True
+                app.query_one('#explore', Checkbox).value = True
+                app.query_one('#no-jumping', Checkbox).value = True
+                await self.finish(app, pilot)
+                self.assertTrue(app.settings.no_jumping)
+                self.assertEqual(search.call_count, 1)
+                await pilot.press('ctrl+n')
+                await self.finish(app, pilot)
+                self.assertEqual(search.call_count, 1)
+
+                # Shuffle may need a new length pool, but must keep the searched mode.
+                app.query_one('#max-length', Input).value = '4'
+                await pilot.press('ctrl+n')
+                await self.finish(app, pilot)
+                self.assertEqual(search.call_count, 2)
+                self.assertEqual(app.settings.max_length, 4)
+                for call in search.call_args_list:
+                    self.assertFalse(call.args[0].optimistic_links)
+                    self.assertFalse(call.args[0].explore_light_chains)
+                self.assertIn('press Search to apply', str(app.query_one('#status', Static).render()))
+
     async def test_help_and_shuffle_from_all_results(self):
         app = ComboFinderApp(settings=SearchSettings(documented_only=True, sample_size=None))
         async with app.run_test(size=(100, 30)) as pilot:
@@ -555,7 +776,7 @@ class BrowserInteractionTests(unittest.IsolatedAsyncioTestCase):
             await pilot.press('ctrl+b')
             self.assertTrue(app.query_one('#filters').display)
             self.assertTrue(app.query_one('#sidebar').display)
-            await pilot.press('ctrl+r')
+            self.assertTrue(await pilot.click('#filter-search'))
             await self.finish(app, pilot)
             self.assertFalse(app.query_one('#filters').display)
             self.assertFalse(app.query_one('#sidebar').display)

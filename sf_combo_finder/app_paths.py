@@ -17,6 +17,7 @@ def user_data_dir():
 
 USER_DATA_DIR = user_data_dir()
 LIBRARY_PATH = USER_DATA_DIR / '.combo_library.json'
+CUSTOM_COMBOS_PATH = USER_DATA_DIR / 'custom_combos.json'
 PREFERENCES_PATH = USER_DATA_DIR / '.tui_preferences.json'
 
 
