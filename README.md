@@ -3,7 +3,7 @@
 Find Street Fighter 6 routes to practice in a terminal app. Browse 31 fighters,
 filter by length, difficulty and meter, and inspect each move's frame timing.
 Save favorites, hide unwanted routes, and shuffle through matching combos.
-![img.png](img.png)
+![img_1.png](img_1.png)
 ## Install and launch
 
 ### Release download
@@ -73,7 +73,7 @@ You can name, edit, copy, or delete saved routes in the builder.
 Use **Notes / explanation** to add setup requirements, timing tips, or a description
 of what the combo is for. Enter adds a new line. Notes are saved with the combo,
 can be edited later, and appear in its details panel.
-
+![img_2.png](img_2.png)
 Select a table result and click **Extend combo** to start with its inputs, or
 choose a displayed route from the builder's starting-combo list. Append your
 own inputs and save a custom route. **Include custom combos** includes saved routes
